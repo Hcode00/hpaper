@@ -15,6 +15,12 @@ hpaper is a powerful and flexible Go application that automates wallpaper manage
 
 hpaper maintains a buffer of preloaded wallpapers, intelligently managing which images to keep in memory. It supports both automatic timed rotation and manual control, making it suitable for various user preferences.
 
+## Installation
+
+```fish
+  go build github.com/Hcode00/hpaper
+```
+
 ## hpaper Usage
 
 **Basic Usage:**
