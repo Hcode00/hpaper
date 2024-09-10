@@ -43,6 +43,9 @@ func (hpaper *Hpaper) StartService() error {
 	hpaper.List = make([]string, 0, len(files))
 	u.LOG.Debug("MaxToLoad = " + strconv.Itoa(int(hpaper.MaxToLoad)))
 	for _, file := range files {
+		if hpaper.Path[len(hpaper.Path)-1] != '/' {
+			hpaper.Path += "/"
+		}
 		hpaper.List = append(hpaper.List, hpaper.Path+file)
 	}
 	go WaitAndSet(hpaper.Interval, hpaper.List, hpaper.MaxToLoad, &hpaper.CurrentIdx)
