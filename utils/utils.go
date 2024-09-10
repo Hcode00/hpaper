@@ -146,8 +146,6 @@ func AbsPath(path string) string {
 		if err != nil {
 			LOG.Panic("Can't Find Home Directory")
 		}
-		LOG.Warn(path[0:])
-		LOG.Warn(path[1:])
 		return HOME + path[1:]
 	}
 	return path
