@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-=======
-
->>>>>>> 3645b55 (first commit)
 # hpaper: Automated Wallpaper Management for Hyprland Using Hyprpaper
 
 hpaper is a powerful and flexible Go application that automates wallpaper management for Hyprland using hyprpaper. It offers a seamless wallpaper rotation experience with intelligent preloading and unloading mechanisms.
