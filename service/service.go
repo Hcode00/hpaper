@@ -34,7 +34,8 @@ type Hpaper struct {
 func (hpaper *Hpaper) StartService() error {
 	u.LOG.Debug("Starting service...")
 	u.StartHyprpaper()
-	time.Sleep(500 * time.Millisecond)
+	// give hyprpaper time to launch
+	time.Sleep(1000 * time.Millisecond)
 	hpaper.Path = os.Args[2]
 	files := u.ListFiles(hpaper.Path)
 	if len(files) == 0 {
