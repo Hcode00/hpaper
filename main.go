@@ -33,6 +33,7 @@ func main() {
 		if isDir {
 			seconds := os.Args[3]
 			maxLoaded := os.Args[4]
+
 			max, err := strconv.Atoi(maxLoaded)
 			if err != nil || max < 0 {
 				u.LOG.Error(maxLoaded + "not a valid or usable number")
@@ -43,6 +44,12 @@ func main() {
 				u.LOG.Error(maxLoaded + "not a valid or usable number of seconds")
 				return
 			}
+			isRandom := false
+			if len(os.Args) > 5 {
+				if os.Args[5] == "-r" {
+					isRandom = true
+				}
+			}
 			s.HandleSignals(command)
 
 			service = &s.Hpaper{
@@ -50,6 +57,7 @@ func main() {
 				CurrentIdx: 0,
 				Interval:   time.Duration(sec) * time.Second,
 				Path:       path,
+				Randomize:  isRandom,
 			}
 			ctx, err := d.StartDaemon(d.Cntxt, service)
 			if err != nil {

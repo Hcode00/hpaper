@@ -13,6 +13,7 @@ import (
 
 const USAGE = `Usage:-
   hpaper start [directory] [duration in seconds] [maximum number of pictures to preload]
+  -r at the end -> can be used to randomize wallpaper list
   hpaper start [image file]
   hpaper [next|prev|status|quit]`
 
@@ -28,6 +29,7 @@ type Hpaper struct {
 	MaxToLoad  uint
 	CurrentIdx uint
 	Interval   time.Duration
+	Randomize  bool
 }
 
 // Function to handle service startup
@@ -43,12 +45,20 @@ func (hpaper *Hpaper) StartService() error {
 	}
 	hpaper.List = make([]string, 0, len(files))
 	u.LOG.Debug("MaxToLoad = " + strconv.Itoa(int(hpaper.MaxToLoad)))
-	for _, file := range files {
-		if hpaper.Path[len(hpaper.Path)-1] != '/' {
-			hpaper.Path += "/"
-		}
-		hpaper.List = append(hpaper.List, hpaper.Path+file)
+	if hpaper.Path[len(hpaper.Path)-1] != '/' {
+		hpaper.Path += "/"
 	}
+	if hpaper.Randomize {
+		randomList := u.RandomizeFileNames(files)
+		for _, file := range randomList {
+			hpaper.List = append(hpaper.List, hpaper.Path+file)
+		}
+	} else {
+		for _, file := range files {
+			hpaper.List = append(hpaper.List, hpaper.Path+file)
+		}
+	}
+
 	go WaitAndSet(hpaper.Interval, hpaper.List, hpaper.MaxToLoad, &hpaper.CurrentIdx)
 	return nil
 }
