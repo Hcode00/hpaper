@@ -46,7 +46,7 @@ or you can download the binary from the release page
 **Basic Usage:**
 
 ```bash
-hpaper start [directory] [duration in seconds] [maximum number of pictures to preload]
+hpaper start [directory] [duration in seconds] [maximum number of pictures to preload] [flags]
 hpaper start [image file]
 ```
 * **`start`** Begins the wallpaper rotation.
@@ -54,7 +54,9 @@ hpaper start [image file]
 * **`duration`** Sets the time interval between wallpaper changes (in seconds).
 * **`maximum number of pictures to preload`** Limits the number of wallpapers preloaded into memory.
 * **`image file`** Directly specifies a single image file as the wallpaper.
-
+* **`flags`** added flags
+  * **`-r`** Randomize wallpapers list at start
+  
 **Commands:**
 ```bash
 hpaper [next | prev | status | quit]
@@ -69,7 +71,8 @@ in your Hyprland config at **`~/.config/hypr/hyprland.config`:**
 
 ```hyprlang
 # start hpaper on this directory and keep 3 images preloaded at all times and switch images every one hour
-exec-once = hpaper start ~/.config/hypr/wallpapers/ 3600 3
+# use -r flag to randomize wallpapers list at the start
+exec-once = hpaper start ~/.config/hypr/wallpapers/ 3600 3 -r
 
 # as simple as that switch to next and previous wallpaper
 bind = SUPER, W, exec, hpaper next
