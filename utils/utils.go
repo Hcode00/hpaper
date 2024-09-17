@@ -13,47 +13,55 @@ import (
 
 /*
 Level 0 NO LOGS -
-Level 1 DEBUG -
-Level 2 WARNING -
-Level 3 ERROR
+Level 1 ERRORS -
+Level 2 WARNINGS -
+Level 3 Logs -
 */
 type Logger struct {
-	warningsMsgs uint
-	errorsMsgs   uint
-	debugMsgs    uint
-	level        uint
+	WarningsMsgs uint
+	ErrorsMsgs   uint
+	DebugMsgs    uint
+	Level        uint
 }
 
 func (l *Logger) Debug(msg string) {
-	l.debugMsgs += 1
-	if l.level > 0 {
+	l.DebugMsgs += 1
+	if l.Level > 2 {
 		log.Println(msg)
 	}
 }
 
 func (l *Logger) Warn(msg string) {
-	l.warningsMsgs += 1
-	if l.level > 1 {
+	l.WarningsMsgs += 1
+	if l.Level > 1 {
 		log.Println("[WARNING]:", msg)
+	}
+}
+func (l *Logger) Log(msg string) {
+	l.WarningsMsgs += 1
+	if l.Level > 1 {
+		println(msg)
 	}
 }
 
 func (l *Logger) Error(msg string) {
-	l.errorsMsgs += 1
-	if l.level > 2 {
+	l.ErrorsMsgs += 1
+	if l.Level > 0 {
 		log.Println("[ERROR]:", msg)
 	}
 }
 
 func (l *Logger) Panic(msg string) {
-	l.errorsMsgs += 1
-	if l.level > 2 {
-		panic("[ERROR]:" + msg)
-	}
+	l.ErrorsMsgs += 1
+	panic("[ERROR]:" + msg)
+}
+
+func (l Logger) Status() {
+	fmt.Printf("You Have %d Errors, %d Warnings and %d Debug Messages\n", l.ErrorsMsgs, l.WarningsMsgs, l.DebugMsgs)
 }
 
 var LOG = Logger{
-	level: 3,
+	Level: 1,
 }
 
 const TIMEOUT = 5000 * time.Millisecond // Milliseconds
@@ -184,24 +192,24 @@ func UnloadAll() error {
 }
 
 func ListLoaded() error {
-	println("\n----------------- Loaded Wallpapers -----------------")
+	LOG.Log("\n----------------- Loaded Wallpapers -----------------")
 	op, err := ex("hyprctl", "hyprpaper", "listloaded")
 	if err != nil {
 		return errors.New("[ERROR] from ListLoaded: " + err.Error())
 	}
 	print(op)
-	println("-----------------------------------------------------")
+	LOG.Log("-----------------------------------------------------")
 	return nil
 }
 
 func ListActive() error {
-	println("\n----------------- Active Wallpapers -----------------")
+	LOG.Log("\n----------------- Active Wallpapers -----------------")
 	op, err := ex("hyprctl", "hyprpaper", "listactive")
 	if err != nil {
 		return errors.New("[ERROR] from ListActive: " + err.Error())
 	}
 	print(op)
-	println("-----------------------------------------------------")
+	LOG.Log("-----------------------------------------------------")
 	return nil
 }
 
@@ -212,7 +220,7 @@ func Unload(filePath string) error {
 		return err
 	}
 	LOG.Debug("status:" + op)
-	println("-----------------------------------------------------")
+	LOG.Log("-----------------------------------------------------")
 	return nil
 }
 

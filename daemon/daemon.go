@@ -16,14 +16,11 @@ import (
 var (
 	HOME, e = os.UserHomeDir()
 	pidFile = fmt.Sprintf("%s/.hpaper/hpaper.pid", HOME)
-	logFile = fmt.Sprintf("%s/.hpaper/hpaper.log", HOME)
 )
 
 var Cntxt = &daemon.Context{
 	PidFileName: pidFile,
 	PidFilePerm: 0o644,
-	LogFileName: logFile,
-	LogFilePerm: 0o640,
 	WorkDir:     "./",
 	Umask:       0o27,
 	Args:        []string{"[hpaper]"},

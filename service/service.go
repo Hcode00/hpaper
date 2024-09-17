@@ -121,7 +121,9 @@ func WaitAndSet(t time.Duration, list []string, maxCap uint, Index *uint) {
 	}
 
 	u.SetOneWallpaper(list[curr])
-	u.ListLoaded()
+	if u.LOG.Level == 3 {
+		u.ListLoaded()
+	}
 
 	ticker := time.NewTicker(t)
 	defer ticker.Stop()
