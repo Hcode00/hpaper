@@ -33,7 +33,7 @@ paru -S hpaper
 ```
 
 ```fish
-go build github.com/Hcode00/hpaper
+go install github.com/Hcode00/hpaper
 ```
 
 
