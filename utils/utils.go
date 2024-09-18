@@ -37,11 +37,10 @@ func (l *Logger) Warn(msg string) {
 		log.Println("[WARNING]:", msg)
 	}
 }
+
 func (l *Logger) Log(msg string) {
-	l.WarningsMsgs += 1
-	if l.Level > 1 {
-		println(msg)
-	}
+	l.DebugMsgs += 1
+	println(msg)
 }
 
 func (l *Logger) Error(msg string) {
@@ -61,7 +60,7 @@ func (l Logger) Status() {
 }
 
 var LOG = Logger{
-	Level: 1,
+	Level: 2,
 }
 
 const TIMEOUT = 5000 * time.Millisecond // Milliseconds
@@ -192,40 +191,39 @@ func UnloadAll() error {
 }
 
 func ListLoaded() error {
-	LOG.Log("\n----------------- Loaded Wallpapers -----------------")
+	println("\n----------------- Loaded Wallpapers -----------------")
 	op, err := ex("hyprctl", "hyprpaper", "listloaded")
 	if err != nil {
 		return errors.New("[ERROR] from ListLoaded: " + err.Error())
 	}
 	print(op)
-	LOG.Log("-----------------------------------------------------")
+	println("-----------------------------------------------------")
 	return nil
 }
 
 func ListActive() error {
-	LOG.Log("\n----------------- Active Wallpapers -----------------")
+	println("\n----------------- Active Wallpapers -----------------")
 	op, err := ex("hyprctl", "hyprpaper", "listactive")
 	if err != nil {
 		return errors.New("[ERROR] from ListActive: " + err.Error())
 	}
 	print(op)
-	LOG.Log("-----------------------------------------------------")
+	println("-----------------------------------------------------")
 	return nil
 }
 
 func Unload(filePath string) error {
-	LOG.Debug("Trying to Unload -|>" + filePath)
+	LOG.Debug("Trying to Unload -> " + filePath)
 	op, err := ex("hyprctl", "hyprpaper", "unload", filePath)
 	if err != nil {
 		return err
 	}
 	LOG.Debug("status:" + op)
-	LOG.Log("-----------------------------------------------------")
 	return nil
 }
 
 func Preload(filePath string) error {
-	LOG.Debug("Trying to Preload -|>" + filePath)
+	LOG.Debug("Trying to Preload -> " + filePath)
 	op, err := ex("hyprctl", "hyprpaper", "preload", filePath)
 	if err != nil {
 		return err
