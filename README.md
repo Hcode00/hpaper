@@ -8,7 +8,7 @@ hpaper is a flexible Go application that automates wallpaper management for Hypr
 - **Efficient Resource Management**: Preloads upcoming wallpapers and unloads unnecessary ones to optimize memory usage.
 - **Manual Control**: Allows users to manually switch to the next or previous wallpaper, with the rotation timer automatically resetting.
 - **Customizable Buffer**: Adjust the number of preloaded wallpapers to balance between responsiveness and resource usage.
-- **Wallpaper Downloading**: Download beautiful wallpapers directly from the [Picsum API](https://picsum.photos)  for easy customization.
+- **Wallpaper Downloading**: Download wallpapers directly from the [Picsum API](https://picsum.photos)  for easy customization.
 
 ## How It Works
 
