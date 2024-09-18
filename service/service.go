@@ -40,8 +40,8 @@ Examples:
   hpaper download /path/to/save 5 1920 1080
   hpaper next
 
-Note:
-  - For the download option, the number of pictures must be between 1 and 10.
+Notes:
+  - For the download option, the number of pictures must be between 1 and 20.
   - Duration is specified in seconds.
   - Maximum number of pictures to preload must be a positive integer.
 `
