@@ -46,6 +46,10 @@ Notes:
   - Maximum number of pictures to preload must be a positive integer.
 `
 
+func Help() {
+	print(USAGE)
+}
+
 var (
 	nextChan = make(chan struct{}, 1)
 	prevChan = make(chan struct{}, 1)

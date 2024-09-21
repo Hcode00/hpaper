@@ -22,11 +22,11 @@ func main() {
 
 	switch command {
 	case "--help", "help":
-		help()
+		s.Help()
 	case "start":
 		arg2 := os.Args[2]
 		if len(os.Args) < 3 {
-			help()
+			s.Help()
 			return
 		}
 		isDir, _ := u.IsDir(u.AbsPath(arg2))
@@ -79,7 +79,7 @@ func main() {
 		d.HandleExternalCommand(d.Cntxt, command, service)
 	case "download":
 		if len(os.Args) < 6 {
-			help()
+			s.Help()
 			return
 		}
 		dir := os.Args[2]
@@ -116,10 +116,6 @@ func main() {
 		d.SendQuit()
 	default:
 		println("hpaper", command, "-> unknown command")
-		help()
+		s.Help()
 	}
-}
-
-func help() {
-	print(s.USAGE)
 }
