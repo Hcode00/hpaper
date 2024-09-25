@@ -1,6 +1,6 @@
 # hpaper: Automated Wallpaper Management with Downloading for Wayland Using Swaybg
 
-hpaper is a flexible Go application that automates wallpaper management for Wayland using Swaybg. It offers a seamless wallpaper rotation experience both manually and automatically.
+hpaper is a flexible Go application that automates wallpaper management for Wayland using [Swaybg](github.com/swaywm/swaybg). It offers a seamless wallpaper rotation experience both manually and automatically.
 
 ## Key Features
 
@@ -10,7 +10,7 @@ hpaper is a flexible Go application that automates wallpaper management for Wayl
 
 ## How It Works
 
-hpaper uses the Swaybg API to set the wallpapers and change the wallpapers at the specified interval.
+hpaper uses the [Swaybg](github.com/swaywm/swaybg) API to set the wallpapers and change the wallpapers at the specified interval.
 you can also use the `next` and `prev` commands to switch to the next or previous wallpaper.
 it also allows you to download wallpapers from the Picsum API and set them as the wallpaper.
 
