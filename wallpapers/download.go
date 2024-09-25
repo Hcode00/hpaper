@@ -61,7 +61,7 @@ func DownloadFile(dir, width, height string, max uint, webP bool) error {
 			return err
 		}
 
-		logger.Debug(fmt.Sprintf("Successfully downloaded and saved %s", path))
+		logger.Debug(fmt.Sprintf("Successfully downloaded and saved %s", idStr+ext))
 	}
 
 	logger.Log(fmt.Sprintf("Completed downloading %d wallpapers", max))

@@ -13,6 +13,8 @@ import (
 	s "github.com/Hcode00/hpaper/service"
 	u "github.com/Hcode00/hpaper/utils"
 	w "github.com/Hcode00/hpaper/wallpapers"
+
+	sway "github.com/Hcode00/hpaper/utils/backends/swaybg"
 )
 
 var (
@@ -51,8 +53,7 @@ func StartDaemon(cntxt *daemon.Context, service *s.Hpaper) (*daemon.Context, err
 	u.LOG.Debug("process PID: " + strconv.Itoa(syscall.Getpid()))
 	WritePIDFile(syscall.Getpid())
 
-	// Initialize your service
-	if err := service.StartService(); err != nil {
+	if err := service.StartSwaybgService(); err != nil {
 		return nil, err
 	}
 	err = daemon.ServeSignals()
@@ -109,28 +110,20 @@ func StartApp(command string, service *s.Hpaper) {
 	isDir, _ := u.IsDir(u.AbsPath(arg2))
 	if isDir {
 		seconds := os.Args[3]
-		maxLoaded := os.Args[4]
-
-		max, err := strconv.Atoi(maxLoaded)
-		if err != nil || max < 0 {
-			u.LOG.Error(maxLoaded + "not a valid or usable number")
-			return
-		}
 		sec, err := strconv.Atoi(seconds)
 		if err != nil || sec < 0 {
-			u.LOG.Error(maxLoaded + "not a valid or usable number of seconds")
+			u.LOG.Error(seconds + "not a valid or usable number of seconds")
 			return
 		}
 		isRandom := false
-		if len(os.Args) > 5 {
-			if os.Args[5] == "-r" {
+		if len(os.Args) > 4 {
+			if os.Args[4] == "-r" {
 				isRandom = true
 			}
 		}
 		s.HandleSignals(command)
 
 		service = &s.Hpaper{
-			MaxToLoad:  uint(max),
 			CurrentIdx: 0,
 			Interval:   time.Duration(sec) * time.Second,
 			Path:       arg2,
@@ -144,10 +137,7 @@ func StartApp(command string, service *s.Hpaper) {
 		defer ctx.Release()
 		defer RemovePidFile()
 	} else if u.IsValidPicture(arg2) {
-		u.StartHyprpaper()
-		// give hyprpaper time to launch
-		time.Sleep(1000 * time.Millisecond)
-		u.SetWallpaper(arg2)
+		sway.SetWallpaper(arg2)
 	} else {
 		u.LOG.Panic("Invalid Command")
 	}
@@ -169,15 +159,6 @@ func HandleExternalCommand(cntxt *daemon.Context, command string, service *s.Hpa
 		err := d.Signal(syscall.SIGUSR2)
 		if err != nil {
 			u.LOG.Error("Failed to send prev signal:" + err.Error())
-		}
-	case "status":
-		err = u.ListLoaded()
-		if err != nil {
-			u.LOG.Panic("Failed to reach hyprpaper\nare you sure hyprpaper is running?")
-		}
-		err := u.ListActive()
-		if err != nil {
-			u.LOG.Panic("Failed to reach hyprpaper\nare you sure hyprpaper is running?")
 		}
 	case "quit":
 		err := d.Signal(syscall.SIGTERM)

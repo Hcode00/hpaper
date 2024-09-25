@@ -8,6 +8,7 @@ import (
 	"time"
 
 	u "github.com/Hcode00/hpaper/utils"
+	sway "github.com/Hcode00/hpaper/utils/backends/swaybg"
 	"github.com/sevlyar/go-daemon"
 )
 
@@ -65,13 +66,10 @@ type Hpaper struct {
 	Randomize  bool
 }
 
-// Function to handle service startup
-func (hpaper *Hpaper) StartService() error {
+func (hpaper *Hpaper) StartSwaybgService() error {
 	u.LOG.Debug("Starting service...")
-	u.StartHyprpaper()
-	// give hyprpaper time to launch
-	time.Sleep(1000 * time.Millisecond)
 	hpaper.Path = os.Args[2]
+
 	files := u.ListFiles(hpaper.Path)
 	if len(files) == 0 {
 		return errors.New("This Directory does not contain any of the supported image formats")
@@ -92,7 +90,7 @@ func (hpaper *Hpaper) StartService() error {
 		}
 	}
 
-	go WaitAndSet(hpaper.Interval, hpaper.List, hpaper.MaxToLoad, &hpaper.CurrentIdx)
+	go WaitAndSetSway(hpaper.Interval, hpaper.List, &hpaper.CurrentIdx)
 	return nil
 }
 
@@ -118,46 +116,17 @@ func PrevHandler(sig os.Signal) error {
 	return nil
 }
 
-func WaitAndSet(t time.Duration, list []string, maxCap uint, Index *uint) {
-	if len(list) == 0 || maxCap == 0 {
+func WaitAndSetSway(t time.Duration, list []string, Index *uint) {
+	if len(list) == 0 {
 		return
 	}
+	sway.UnloadAll()
+	curr := *Index % uint(len(list))
 
-	u.UnloadAll()
-	buffer := make([]string, maxCap)
-	bufferIndex := *Index % uint(len(list))
-	curr := bufferIndex
-
-	// Preload function
-	preload := func(index uint) {
-		u.Preload(list[index])
+	err := sway.SetWallpaper(list[curr])
+	if err != nil {
+		u.LOG.Error("Failed to Set wallpaper" + list[curr] + "->" + err.Error())
 	}
-
-	// Preload initial set
-	if maxCap == 1 {
-		preload(curr)
-	} else if maxCap == 2 {
-		preload(curr)
-		preload((curr + 1) % uint(len(list)))
-	} else if maxCap%2 == 0 { // even
-		preload(curr)
-		preload((curr - 1 + uint(len(list))) % uint(len(list))) // one before
-		for i := uint(1); i <= maxCap/2; i++ {
-			preload((curr + i) % uint(len(list))) // two after
-		}
-	} else { // odd
-		preload((curr - 1 + uint(len(list))) % uint(len(list))) // one before
-		preload(curr)
-		for i := uint(1); i <= maxCap/2; i++ {
-			preload((curr + i) % uint(len(list))) // one after
-		}
-	}
-
-	u.SetOneWallpaper(list[curr])
-	if u.LOG.Level == 3 {
-		u.ListLoaded()
-	}
-
 	ticker := time.NewTicker(t)
 	defer ticker.Stop()
 	resetTicker := func() {
@@ -167,14 +136,14 @@ func WaitAndSet(t time.Duration, list []string, maxCap uint, Index *uint) {
 	for {
 		select {
 		case <-ticker.C:
-			moveToNext(list, &curr, &bufferIndex, buffer, maxCap)
+			moveToNextSway(list, &curr)
 		case <-nextChan:
 			u.LOG.Debug("Next signal triggered")
-			moveToNext(list, &curr, &bufferIndex, buffer, maxCap)
+			moveToNextSway(list, &curr)
 			resetTicker()
 		case <-prevChan:
 			u.LOG.Debug("Prev signal triggered")
-			moveToPrev(list, &curr, &bufferIndex, buffer, maxCap)
+			moveToPrevSway(list, &curr)
 			resetTicker()
 		case <-quitChan:
 			u.LOG.Warn("Quitting wallpaper rotation...")
@@ -183,70 +152,24 @@ func WaitAndSet(t time.Duration, list []string, maxCap uint, Index *uint) {
 	}
 }
 
-func moveToNext(list []string, curr *uint, bufferIndex *uint, buffer []string, maxCap uint) {
+func moveToNextSway(list []string, curr *uint) {
 	nextIndex := (*curr + 1) % uint(len(list))
-	nextToLoad := (nextIndex + maxCap/2) % uint(len(list))
-
-	// Preload next wallpaper
-	err := u.Preload(list[nextToLoad])
-	if err != nil {
-		u.LOG.Warn("Failed to Preload wallpaper" + list[nextToLoad] + "->" + err.Error())
+	currentProcess := sway.GetCurrentProcess()
+	sway.SetWallpaper(list[nextIndex])
+	if currentProcess != 0 {
+		sway.OptionalKill(currentProcess)
 	}
-
-	// Set new wallpaper
-	err = u.SetOneWallpaper(list[nextIndex])
-	if err != nil {
-		u.LOG.Warn("Failed to Set wallpaper" + list[nextIndex] + "->" + err.Error())
-	}
-
-	// Unload previous wallpaper
-	prevToUnload := (*curr - maxCap/2 + uint(len(list))) % uint(len(list))
-	toUnload := list[prevToUnload]
-	err = u.Unload(toUnload)
-	if err != nil {
-		u.LOG.Warn("Failed to unload" + toUnload + "->" + err.Error())
-	}
-
 	*curr = nextIndex
-
-	if maxCap > 1 {
-		buffer[*bufferIndex] = list[nextToLoad]
-		*bufferIndex = (*bufferIndex + 1) % maxCap
-	}
 }
 
-func moveToPrev(list []string, curr *uint, bufferIndex *uint, buffer []string, maxCap uint) {
+func moveToPrevSway(list []string, curr *uint) {
 	prevIndex := (*curr - 1 + uint(len(list))) % uint(len(list))
-	prevToLoad := (prevIndex - maxCap/2 + uint(len(list))) % uint(len(list))
-
-	// Preload previous wallpaper
-	err := u.Preload(list[prevToLoad])
-	if err != nil {
-		u.LOG.Warn("Failed to Preload wallpaper" + list[prevIndex] + "->" + err.Error())
-	}
-
-	// Set new wallpaper
-	err = u.SetOneWallpaper(list[prevIndex])
-	if err != nil {
-		u.LOG.Warn("Failed to Set wallpaper" + list[prevIndex] + "->" + err.Error())
-	}
-
-	// Small delay to avoid potential race conditions
-	time.Sleep(100 * time.Millisecond)
-
-	// Unload current wallpaper
-
-	toUnload := list[((*curr)%uint(len(list))+maxCap/2)%uint(len(list))]
-	err = u.Unload(toUnload)
-	if err != nil {
-		u.LOG.Warn("Failed to unload" + toUnload + "->" + err.Error())
+	currentProcess := sway.GetCurrentProcess()
+	sway.SetWallpaper(list[prevIndex])
+	if currentProcess != 0 {
+		sway.OptionalKill(currentProcess)
 	}
 	*curr = prevIndex
-
-	if maxCap > 1 {
-		*bufferIndex = (*bufferIndex - 1 + maxCap) % maxCap
-		buffer[*bufferIndex] = list[prevToLoad]
-	}
 }
 
 func HandleSignals(command string) {

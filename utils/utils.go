@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"math/rand"
@@ -65,7 +64,7 @@ var LOG = Logger{
 
 const TIMEOUT = 5000 * time.Millisecond // Milliseconds
 
-func ex(name string, args ...string) (string, error) {
+func Ex(name string, args ...string) (string, error) {
 	c := exec.Command(name, args...)
 	out, err := c.Output()
 	if err != nil {
@@ -78,33 +77,6 @@ func ex(name string, args ...string) (string, error) {
 		}
 	}
 	return string(out), nil
-}
-
-func StartHyprpaper() {
-	processName := "hyprpaper"
-
-	// Check if the process is running
-	cmd := exec.Command("pgrep", processName)
-	output, err := cmd.Output()
-
-	if err != nil && !strings.Contains(string(output), processName) {
-		// Process is not running, start it
-		LOG.Warn(processName + " is not running. Starting it..")
-
-		cmd := exec.Command(processName)
-
-		err := cmd.Start()
-		if err != nil {
-			LOG.Error("starting " + processName + " -> " + err.Error())
-			return
-		}
-
-		// Detach the process
-		cmd.Process.Release()
-		LOG.Debug(processName + " started successfully in the background.")
-	} else {
-		LOG.Debug(processName + " is already running.\n")
-	}
 }
 
 func IsDir(path string) (bool, error) {
@@ -156,90 +128,6 @@ func AbsPath(path string) string {
 		return HOME + path[1:]
 	}
 	return path
-}
-
-func SetWallpaper(path string) error {
-	_, err := ex("hyprctl", "hyprpaper", "preload", path)
-	if err != nil {
-		err = UnloadAll()
-		if err != nil {
-			return err
-		}
-	}
-	parts := strings.Split(path, "/")
-	fileName := strings.Trim(parts[len(parts)-1], " ")
-	if !IsValidPicture(fileName) {
-		return errors.New("Not a valid picture extenstion")
-	}
-	_, err = ex("hyprctl", "hyprpaper", "preload", path)
-	if err != nil {
-		return err
-	}
-	_, err = ex("hyprctl", "hyprpaper", "wallpaper", ",", path)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func UnloadAll() error {
-	_, err := ex("hyprctl", "hyprpaper", "unload", "all")
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func ListLoaded() error {
-	println("\n----------------- Loaded Wallpapers -----------------")
-	op, err := ex("hyprctl", "hyprpaper", "listloaded")
-	if err != nil {
-		return errors.New("[ERROR] from ListLoaded: " + err.Error())
-	}
-	print(op)
-	println("-----------------------------------------------------")
-	return nil
-}
-
-func ListActive() error {
-	println("\n----------------- Active Wallpapers -----------------")
-	op, err := ex("hyprctl", "hyprpaper", "listactive")
-	if err != nil {
-		return errors.New("[ERROR] from ListActive: " + err.Error())
-	}
-	print(op)
-	println("-----------------------------------------------------")
-	return nil
-}
-
-func Unload(filePath string) error {
-	LOG.Debug("Trying to Unload -> " + filePath)
-	op, err := ex("hyprctl", "hyprpaper", "unload", filePath)
-	if err != nil {
-		return err
-	}
-	LOG.Debug("status:" + op)
-	return nil
-}
-
-func Preload(filePath string) error {
-	LOG.Debug("Trying to Preload -> " + filePath)
-	op, err := ex("hyprctl", "hyprpaper", "preload", filePath)
-	if err != nil {
-		return err
-	}
-	LOG.Debug("status:" + op)
-	return nil
-}
-
-func SetOneWallpaper(filePath string) error {
-	LOG.Debug("Trying to Set Wallpaper at" + filePath)
-	op, err := ex("hyprctl", "hyprpaper", "wallpaper", ",", filePath)
-	if err != nil {
-		return err
-	}
-	LOG.Debug("status:" + op)
-	return nil
 }
 
 func RandomizeFileNames(files []string) []string {
