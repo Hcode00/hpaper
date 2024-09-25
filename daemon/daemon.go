@@ -119,6 +119,10 @@ func StartApp(command string, service *s.Hpaper) {
 		if len(os.Args) > 4 {
 			if os.Args[4] == "-r" {
 				isRandom = true
+			} else if len(os.Args) > 5 {
+				if os.Args[5] == "-r" {
+					isRandom = true
+				}
 			}
 		}
 		s.HandleSignals(command)
