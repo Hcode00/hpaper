@@ -1,6 +1,6 @@
 # hpaper: Automated Wallpaper Management with Downloading for Wayland Using Swaybg
 
-hpaper is a flexible Go application that automates wallpaper management for Wayland using Swaybg. It offers a seamless wallpaper rotation experience with  preloading and unloading mechanisms.
+hpaper is a flexible Go application that automates wallpaper management for Wayland using Swaybg. It offers a seamless wallpaper rotation experience both manually and automatically.
 
 ## Key Features
 
@@ -79,7 +79,7 @@ This command will download a single wallpaper with a resolution of 1920x1080 fro
 in your Wayland config at **`~/.config/hypr/hyprland.config`:**
 
 ```hyprlang
-# start hpaper on this directory and keep 3 images preloaded at all times and switch images every one hour
+# start hpaper on this directory and switch images every one hour
 # use -r flag to randomize wallpapers list at the start
 exec-once = hpaper start ~/.config/hypr/wallpapers/ 3600 -r
 

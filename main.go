@@ -19,7 +19,7 @@ func main() {
 		s.Help()
 	case "start":
 		d.StartApp(command, service)
-	case "next", "prev", "status":
+	case "next", "prev":
 		d.HandleExternalCommand(d.Cntxt, command, service)
 	case "download":
 		d.Download()

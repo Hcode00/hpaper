@@ -15,7 +15,7 @@ import (
 const USAGE = `Usage:
   hpaper help                     Show help information
 
-  hpaper start [directory] [duration in seconds] [maximum number of pictures to preload] [-r]
+  hpaper start [directory] [duration in seconds] [-r]
     -r (optional)                 Randomize wallpaper list
 
   hpaper start [image file]       Set a single image as wallpaper
@@ -24,19 +24,17 @@ const USAGE = `Usage:
     -w (optional)                              Download in .webp extension
 
   Other Commands:
-  hpaper [next|prev|status|quit]  Control running hpaper instance
+  hpaper [next|prev|quit]  Control running hpaper instance
 
   next -> set next wallpaper in the list
 
   prev -> set previous wallpaper in the list
 
-  status -> show current wallpaper name and preloaded wallpapers
-
   quit -> stop rotaing wallpapers
 
 Examples:
-  hpaper start /path/to/wallpapers 300 3
-  hpaper start /path/to/wallpapers 300 3 -r
+  hpaper start /path/to/wallpapers 300
+  hpaper start /path/to/wallpapers 300 -r
   hpaper start /path/to/image.jpg
   hpaper download /path/to/save 5 1920 1080
   hpaper next
@@ -44,7 +42,6 @@ Examples:
 Notes:
   - For the download option, the number of pictures must be between 1 and 20.
   - Duration is specified in seconds.
-  - Maximum number of pictures to preload must be a positive integer.
 `
 
 func Help() {
