@@ -24,7 +24,12 @@ func DownloadFile(dir, width, height string, max uint, webP bool) error {
 	for i := uint(0); i < max; i++ {
 		id := rand.Uint32()
 		idStr := strconv.Itoa(int(id))
-		path := dir + idStr + ext
+		var path string
+		if dir[len(dir)-1] != '/' {
+			path = dir + "/" + idStr + ext
+		} else {
+			path = dir + idStr + ext
+		}
 
 		l := fmt.Sprintf("Downloading image %d saved in %s", i+1, path)
 		logger.Log(l)
