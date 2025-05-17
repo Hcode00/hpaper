@@ -8,7 +8,7 @@ import (
 	"time"
 
 	u "github.com/Hcode00/hpaper/utils"
-	sway "github.com/Hcode00/hpaper/utils/backends/swaybg"
+	sway "github.com/Hcode00/hpaper/utils/backends/swaybg/swaybg"
 	"github.com/sevlyar/go-daemon"
 )
 

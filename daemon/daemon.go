@@ -14,7 +14,7 @@ import (
 	u "github.com/Hcode00/hpaper/utils"
 	w "github.com/Hcode00/hpaper/wallpapers"
 
-	sway "github.com/Hcode00/hpaper/utils/backends/swaybg"
+	sway "github.com/Hcode00/hpaper/utils/backends/swaybg/swaybg"
 )
 
 var (
