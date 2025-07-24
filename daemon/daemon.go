@@ -2,224 +2,185 @@ package daemon
 
 import (
 	"fmt"
+	"log"
+	"net"
 	"os"
-	"path/filepath"
-	"strconv"
-	"syscall"
+	"strings"
+	"sync"
 	"time"
 
-	"github.com/sevlyar/go-daemon"
-
-	s "github.com/Hcode00/hpaper/service"
-	u "github.com/Hcode00/hpaper/utils"
-	w "github.com/Hcode00/hpaper/wallpapers"
-
-	sway "github.com/Hcode00/hpaper/utils/backends/swaybg/swaybg"
+	"hpaper/backends"
+	"hpaper/config"
+	"hpaper/utils"
 )
 
-var (
-	HOME, e = os.UserHomeDir()
-	pidFile = fmt.Sprintf("%s/.hpaper/hpaper.pid", HOME)
-)
-
-var Cntxt = &daemon.Context{
-	PidFileName: pidFile,
-	PidFilePerm: 0o644,
-	WorkDir:     "./",
-	Umask:       0o27,
-	Args:        []string{"[hpaper]"},
+type IPCMessage struct {
+	Action       backends.WallpaperAction
+	ResponseChan chan string
 }
 
-func StartDaemon(cntxt *daemon.Context, service *s.Hpaper) (*daemon.Context, error) {
-	if e != nil {
-		u.LOG.Panic("can't find home directory")
-	}
-	u.LOG.Debug("Starting daemon...")
-
-	dir := filepath.Dir(Cntxt.PidFileName)
-
-	// Create the directory if it doesn't exist
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return nil, err
-	}
-
-	d, err := cntxt.Reborn()
-	if err != nil {
-		return nil, err
-	}
-
-	u.LOG.Debug("hpaper daemon started")
-	u.LOG.Debug("daemon PID: " + strconv.Itoa(d.Pid))
-	u.LOG.Debug("process PID: " + strconv.Itoa(syscall.Getpid()))
-	WritePIDFile(syscall.Getpid())
-
-	if err := service.StartSwaybgService(); err != nil {
-		return nil, err
-	}
-	err = daemon.ServeSignals()
-	if err != nil {
-		return nil, err
-	}
-
-	return cntxt, nil
+type WallpaperManager struct {
+	wallpapers           []string
+	currentIndex         int
+	mu                   sync.Mutex
+	stopAutoRotate       chan struct{}
+	commandChan          chan IPCMessage
+	config               config.Config
+	wallpaperBackend     backends.WallpaperBackend
+	currentWallpaperPath string
 }
 
-func Download() {
-	if len(os.Args) < 6 {
-		s.Help()
-		return
+func StartDaemon(wallpaperDir string, config config.Config, backend backends.WallpaperBackend) {
+	wallpapers, err := utils.LoadWallpapers(wallpaperDir, config.Randomize)
+	if err != nil {
+		log.Fatalf("Failed to load wallpapers: %v", err)
 	}
-	dir := os.Args[2]
-	numStr := os.Args[3]
-	width := os.Args[4]
-	height := os.Args[5]
 
-	isDir, err := u.IsDir(u.AbsPath(dir))
-	if err != nil {
-		u.LOG.Panic(err.Error())
+	if len(wallpapers) == 0 {
+		log.Fatalf("No wallpapers found in %s after loading.", wallpaperDir)
 	}
-	if !isDir {
-		u.LOG.Panic("Please Specify a directory to save wallpapers in")
+
+	manager := &WallpaperManager{
+		wallpapers:       wallpapers,
+		currentIndex:     0,
+		stopAutoRotate:   make(chan struct{}),
+		commandChan:      make(chan IPCMessage),
+		wallpaperBackend: backend,
+		config:           config,
 	}
-	max, err := strconv.Atoi(numStr)
-	if err != nil || max < 0 {
-		u.LOG.Error(numStr + "not a valid or usable number")
-		return
+
+	if err := manager.listenForCommands(); err != nil {
+		log.Fatalf("Failed to set up command listener: %v", err)
 	}
-	if max < 1 || max > 20 {
-		u.LOG.Panic("Downloaded Range from 1 to 20")
-	}
-	isWebp := false
-	if len(os.Args) > 6 {
-		if os.Args[6] == "-w" {
-			isWebp = true
-		}
-	}
-	err = w.DownloadFile(u.AbsPath(dir), width, height, uint(max), isWebp)
-	if err != nil {
-		u.LOG.Panic(err.Error())
-	}
+
+	manager.RunDaemon()
 }
 
-func StartApp(command string, service *s.Hpaper) {
-	arg2 := os.Args[2]
-	if len(os.Args) < 3 {
-		s.Help()
-		return
+func (wm *WallpaperManager) RunDaemon() {
+	log.Println("hpaper daemon started.")
+
+	if err := wm.SetWallpaper(wm.wallpapers[wm.currentIndex]); err != nil {
+		log.Printf("Error setting initial wallpaper: %v", err)
 	}
-	isDir, _ := u.IsDir(u.AbsPath(arg2))
-	if isDir {
-		seconds := os.Args[3]
-		sec, err := strconv.Atoi(seconds)
-		if err != nil || sec < 0 {
-			u.LOG.Error(seconds + "not a valid or usable number of seconds")
+
+	ticker := time.NewTicker(wm.config.GetRotationDuration())
+	if wm.config.RotationInterval == 0 {
+		ticker.Stop()
+		log.Println("Auto-rotation is disabled.")
+	} else {
+		log.Printf("Auto-rotation enabled every %s.", wm.config.GetRotationDuration())
+	}
+
+	defer ticker.Stop()
+
+	for {
+		select {
+		case msg := <-wm.commandChan:
+			switch msg.Action {
+			case backends.ActionNext:
+				wm.setNextWallpaper()
+				msg.ResponseChan <- "OK"
+			case backends.ActionPrev:
+				wm.setPrevWallpaper()
+				msg.ResponseChan <- "OK"
+			case backends.ActionQuit:
+				log.Println("Quit command received. Shutting down.")
+				msg.ResponseChan <- "OK"
+				close(wm.stopAutoRotate)
+				return
+			case backends.ActionCurrent:
+				wm.mu.Lock()
+				path := wm.currentWallpaperPath
+				wm.mu.Unlock()
+				msg.ResponseChan <- path
+			default:
+				msg.ResponseChan <- "Error: Unknown command"
+			}
+		case <-ticker.C:
+			wm.setNextWallpaper()
+		case <-wm.stopAutoRotate:
+			log.Println("Daemon stop signal received.")
 			return
 		}
-		isRandom := false
-		if len(os.Args) > 4 {
-			if os.Args[4] == "-r" {
-				isRandom = true
-			} else if len(os.Args) > 5 {
-				if os.Args[5] == "-r" {
-					isRandom = true
-				}
+	}
+}
+
+func (wm *WallpaperManager) listenForCommands() error {
+	sockPath := "/tmp/hpaper_daemon.sock"
+
+	if err := os.RemoveAll(sockPath); err != nil {
+		return fmt.Errorf("failed to remove old socket: %w", err)
+	}
+
+	listener, err := net.Listen("unix", sockPath)
+	if err != nil {
+		return fmt.Errorf("failed to listen on unix socket: %w", err)
+	}
+	log.Printf("Listening for commands on %s", sockPath)
+
+	go func() {
+		for {
+			conn, err := listener.Accept()
+			if err != nil {
+				log.Printf("Error accepting connection: %v", err)
+				continue
 			}
+			go wm.handleClientConnection(conn)
 		}
-		s.HandleSignals(command)
-
-		service = &s.Hpaper{
-			CurrentIdx: 0,
-			Interval:   time.Duration(sec) * time.Second,
-			Path:       arg2,
-			Randomize:  isRandom,
-		}
-		ctx, err := StartDaemon(Cntxt, service)
-		if err != nil {
-			u.LOG.Panic("Unable to run ->" + err.Error())
-		}
-		defer u.LOG.Debug("Service Ended.")
-		defer ctx.Release()
-		defer RemovePidFile()
-	} else if u.IsValidPicture(arg2) {
-		sway.SetWallpaper(arg2)
-	} else {
-		u.LOG.Panic("Invalid Command")
-	}
+	}()
+	return nil
 }
 
-func HandleExternalCommand(cntxt *daemon.Context, command string, service *s.Hpaper) {
-	d, err := cntxt.Search()
+func (wm *WallpaperManager) handleClientConnection(conn net.Conn) {
+	defer conn.Close()
+	buffer := make([]byte, 1024)
+	n, err := conn.Read(buffer)
 	if err != nil {
-		u.LOG.Error("Unable to send signal to the daemon\nMake sure the app is running using [hpaper start]")
-	}
-
-	switch command {
-	case "next":
-		err := d.Signal(syscall.SIGUSR1)
-		if err != nil {
-			u.LOG.Error("Failed to send next signal:" + err.Error())
-		}
-	case "prev":
-		err := d.Signal(syscall.SIGUSR2)
-		if err != nil {
-			u.LOG.Error("Failed to send prev signal:" + err.Error())
-		}
-	case "quit":
-		err := d.Signal(syscall.SIGTERM)
-		if err != nil {
-			u.LOG.Error("Failed to send quit signal:" + err.Error())
-		}
-	default:
-		u.LOG.Error("Unknown command:" + command)
-	}
-}
-
-func WritePIDFile(pid int) {
-	file, err := os.OpenFile(Cntxt.PidFileName, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o644)
-	if err != nil {
-		u.LOG.Error(err.Error())
-	}
-	defer file.Close()
-
-	pidString := strconv.Itoa(pid)
-	_, err = file.WriteString(pidString)
-	if err != nil {
-		u.LOG.Error(err.Error())
-	}
-}
-
-func ReadPID() (int, error) {
-	pidStr, err := os.ReadFile(Cntxt.PidFileName)
-	if err != nil {
-		return 0, err
-	}
-	pid, err := strconv.ParseInt(string(pidStr), 10, 64)
-	if err != nil {
-		return 0, err
-	}
-	return int(pid), nil
-}
-
-func RemovePidFile() {
-	err := os.Remove(Cntxt.PidFileName)
-	if err != nil {
-		u.LOG.Error(err.Error())
-	}
-}
-
-func SendQuit() {
-	pid, err := ReadPID()
-	if err != nil {
-		u.LOG.Error("Cannot terminate" + err.Error())
+		log.Printf("Error reading from client: %v", err)
 		return
 	}
-	process, err := os.FindProcess(pid)
-	if err != nil {
-		u.LOG.Error("Process not found" + err.Error())
+	cmdStr := strings.TrimSpace(string(buffer[:n]))
+	action := backends.WallpaperAction(cmdStr)
+
+	respChan := make(chan string)
+	wm.commandChan <- IPCMessage{Action: action, ResponseChan: respChan}
+
+	response := <-respChan
+	if _, err := conn.Write([]byte(response)); err != nil {
+		log.Printf("Error writing response to client: %v", err)
 	}
-	err = process.Signal(syscall.SIGTERM)
-	if err != nil {
-		u.LOG.Error("Sending signal" + err.Error())
+}
+
+func (wm *WallpaperManager) SetWallpaper(imagePath string) error {
+	wm.currentWallpaperPath = imagePath
+	return wm.wallpaperBackend.SetWallpaper(imagePath, wm.config)
+}
+
+func (wm *WallpaperManager) setNextWallpaper() {
+	wm.mu.Lock()
+	defer wm.mu.Unlock()
+
+	wm.currentIndex = (wm.currentIndex + 1) % len(wm.wallpapers)
+	nextWallpaper := wm.wallpapers[wm.currentIndex]
+	log.Printf("Setting next wallpaper: %s", nextWallpaper)
+
+	if err := wm.SetWallpaper(nextWallpaper); err != nil {
+		log.Printf("Error setting next wallpaper: %v", err)
 	}
-	u.LOG.Error("Quiting ...")
+}
+
+func (wm *WallpaperManager) setPrevWallpaper() {
+	wm.mu.Lock()
+	defer wm.mu.Unlock()
+
+	wm.currentIndex--
+	if wm.currentIndex < 0 {
+		wm.currentIndex = len(wm.wallpapers) - 1
+	}
+	prevWallpaper := wm.wallpapers[wm.currentIndex]
+	log.Printf("Setting previous wallpaper: %s", prevWallpaper)
+
+	if err := wm.SetWallpaper(prevWallpaper); err != nil {
+		log.Printf("Error setting previous wallpaper: %v", err)
+	}
 }
