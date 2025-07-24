@@ -1,89 +1,108 @@
-# hpaper: Automated Wallpaper Management with Downloading for Wayland Using Swaybg
+# hpaper: Advanced Wallpaper Management for Wayland
 
-hpaper is a flexible Go application that automates wallpaper management for Wayland using [Swaybg](https://github.com/swaywm/swaybg). It offers a seamless wallpaper rotation experience both manually and automatically.
+hpaper is a powerful Go-based wallpaper management daemon for Wayland compositors that provides automated rotation, multi-backend support, and seamless integration with your desktop environment.
+
+## Video Showcase
+
+[![hpaper Demo](https://github.com/Hcode00/hpaper/blob/main/showcase.gif)]()
 
 ## Key Features
 
-- **Smart Rotation**: Automatically cycles through your wallpaper collection at customizable intervals.
-- **Manual Control**: Allows users to manually switch to the next or previous wallpaper, with the rotation timer automatically resetting.
-- **Wallpaper Downloading**: Download wallpapers directly from the [Picsum API](https://picsum.photos)  for easy customization.
+- **Multi-Backend Support**: Works with both [Swaybg](https://github.com/swaywm/swaybg) and [Hyprpaper](https://github.com/hyprwm/hyprpaper) wallpaper engines.
+- **Smart Daemon Architecture**: Runs as a background daemon with instant client commands for seamless wallpaper switching.
+- **Configuration-Driven**: Comprehensive configuration file support with runtime overrides and automatic defaults.
+- **Pywal Integration**: Optional automatic color scheme generation using pywal for system-wide theming.
+- **Flexible Rotation**: Customizable auto-rotation intervals with manual control and timer reset functionality.
+- **Monitor-Specific Control**: Supports per-monitor wallpaper management for multi-display setups.
 
 ## How It Works
 
-hpaper uses the [Swaybg](https://github.com/swaywm/swaybg) API to set the wallpapers and change the wallpapers at the specified interval.
-you can also use the `next` and `prev` commands to switch to the next or previous wallpaper.
-it also allows you to download wallpapers from the Picsum API and set them as the wallpaper.
+hpaper operates as a daemon process that manages wallpaper rotation and responds to client commands through Unix socket IPC. The daemon loads wallpapers from your specified directory, handles backend-specific wallpaper setting, and provides instant response to manual controls without interrupting the rotation cycle.
 
 ## Installation
 
-if you are on arch linux the package is available in the AUR
-
+**Arch Linux (AUR):**
 ```sh
 paru -S hpaper
 ```
 
+**Go Install:**
 ```sh
 go install github.com/Hcode00/hpaper
 ```
 
-**Alternatively, download the binary from the release page.**
+**Binary Download:**
+Download the latest binary from the [releases page](https://github.com/Hcode00/hpaper/releases).
 
-## hpaper Usage
+## Usage
 
-**Basic Usage:**
-
-```sh
-# Starts wallpaper rotation from a specified directory, sets rotation interval
-hpaper start [directory] [duration in seconds] [flags]
-# Sets a single image as the wallpaper.
-hpaper start [image file]
-# Downloads a specified number of wallpapers and saves them to the given directory.
-hpaper download [directory] [number of pictures] [width] [height] [flags]
-```
-
-- **`start`** Begins the wallpaper rotation or sets a single image as wallpaper.
-- **`directory`** (for `start` with directory) Specifies the directory containing the wallpaper images.
-- **`duration`** (for `start` with directory) Sets the time interval between wallpaper changes (in seconds).
-- **`image file`** (for `start` with image file) Specifies a single image file as the wallpaper.
-- **`directory`** (for `download`) Path to save the downloaded wallpapers.
-- **`number of pictures`** (for `download`) Defines the number of wallpapers to download (1-20).
-- **`width`** (for `download`) Sets the desired width of downloaded wallpapers .
-- **`height`** (for `download`) Sets the desired height of downloaded wallpapers.
-- **`flags`** Added flags
-  - **`-r`** (for `start` with directory) Randomize wallpapers list at start (optional)
-  - **`-w`** (for `download`) Download wallpapers in WebP format (optional)
-  
-**Commands:**
+**Starting the Daemon:**
 
 ```sh
-hpaper [next | prev | help | quit]
+# Start with wallpaper directory (creates default config if none exists)
+hpaper start <wallpaper_directory>
+
+# Start with custom configuration file
+hpaper start <wallpaper_directory> -config /path/to/config.conf
 ```
 
-- **`next`** Sets the next wallpaper in the list.
-- **`prev`** Sets the previous wallpaper in the list.
-- **`help`** Show useful help information.
-- **`quit`** Stops the wallpaper rotation.
+**Runtime Commands:**
+
+```sh
+hpaper next      # Switch to next wallpaper
+hpaper prev      # Switch to previous wallpaper  
+hpaper current   # Get path of current wallpaper
+hpaper quit      # Stop the daemon
+```
+
+## Configuration
+
+hpaper automatically creates a configuration file at `~/.config/hpaper/hpaper.conf` with the following options:
+
+**General Settings:**
+- **`wallpaper_dir`** - Directory containing wallpaper images
+- **`rotation_interval`** - Auto-rotation interval in seconds (0 disables)
+- **`randomize`** - Shuffle wallpaper order on startup
+- **`backend`** - Backend engine: `swaybg` or `hyprpaper`
+
+**Swaybg Settings:**
+- **`swaybg_mode`** - Display mode: `fill`, `fit`, `stretch`, `center`, `tile`
+- **`swaybg_output`** - Target output (monitor) or `*` for all
+
+**Hyprpaper Settings:**
+- **`monitor_name`** - Monitor identifier (e.g., `DP-1`) or `all`
+
+**Pywal Integration:**
+- **`pywal_enabled`** - Enable automatic color scheme generation
+- **`pywal_command`** - Custom pywal command with arguments
 
 ## Examples
 
-**Example for downloading an image:**
-
+**Basic Setup:**
 ```bash
-hpaper download ~/Pictures 1 1920 1080
+# Start daemon with 30-minute rotation
+hpaper start ~/Pictures/Wallpapers/
 ```
 
-This command will download a single wallpaper with a resolution of 1920x1080 from the Picsum API and save it to the `~/Pictures` directory.
-
-**For Hyprland Config:**
-
-in your Wayland config at **`~/.config/hypr/hyprland.config`:**
-
+**Hyprland Integration:**
 ```hyprlang
-# start hpaper on this directory and switch images every one hour
-# use -r flag to randomize wallpapers list at the start
-exec-once = hpaper start ~/.config/hypr/wallpapers/ 3600 -r
+# Auto-start hpaper daemon
+exec-once = hpaper start ~/.config/hypr/wallpapers/
 
-# as simple as that switch to next and previous wallpaper
+# Wallpaper controls
 bind = SUPER, W, exec, hpaper next
 bind = SUPER SHIFT, W, exec, hpaper prev
+bind = SUPER, SEMICOLON, exec, hpaper current
+```
+
+**Advanced Configuration:**
+```conf
+# ~/.config/hpaper/hpaper.conf
+wallpaper_dir = /home/user/wallpapers
+rotation_interval = 1800
+randomize = true
+backend = hyprpaper
+monitor_name = DP-1
+pywal_enabled = true
+pywal_command = wal --cols16 -n -q
 ```
