@@ -36,8 +36,8 @@ func DefaultConfig() *Config {
 		RotationInterval: 3600,
 		Randomize:        true,
 		Backend:          "swaybg",
-		SwaybgMode:       "fit",
-		SwaybgOutput:     "all",
+		SwaybgMode:       "fill",
+		SwaybgOutput:     "",
 		MonitorName:      "",
 		PywalEnabled:     false,
 		PywalCommand:     "wal --cols16 -n",
@@ -59,12 +59,23 @@ func saveConfig(cfg *Config, filePath string) error {
 	writer := bufio.NewWriter(file)
 
 	effectiveWallpaperDir := cfg.WallpaperDir
-	fmt.Fprintf(writer, "wallpaper_dir = %s\n", effectiveWallpaperDir)
 
+	fmt.Fprintf(writer, "# [General]\n\n")
+
+	fmt.Fprintf(writer, "wallpaper_dir = %s\n", effectiveWallpaperDir)
 	fmt.Fprintf(writer, "rotation_interval = %d\n", cfg.RotationInterval)
 	fmt.Fprintf(writer, "randomize = %t\n", cfg.Randomize)
 	fmt.Fprintf(writer, "backend = %s\n", cfg.Backend)
+	fmt.Fprintf(writer, "\n# [swaybg settings]\n\n")
+	fmt.Fprintf(writer, "# available modes: fill, fit, stretch, center, tile\n")
+	fmt.Fprintf(writer, "swaybg_mode = %s\n", cfg.SwaybgMode)
+	fmt.Fprintf(writer, "# Select an output to configure. Subsequent appearance options will only apply to this output. The special value * selects all outputs.\n")
+	fmt.Fprintf(writer, "swaybg_output = %s\n", cfg.SwaybgOutput)
+	fmt.Fprintf(writer, "\n# [hyprpaper settings]\n")
+	fmt.Fprintf(writer, "# Example: DP-1 or all\n")
+
 	fmt.Fprintf(writer, "monitor_name = %s\n", cfg.MonitorName)
+	fmt.Fprintf(writer, "\n# [pywal settings]\n")
 	fmt.Fprintf(writer, "pywal_enabled = %t\n", cfg.PywalEnabled)
 	fmt.Fprintf(writer, "pywal_command = %s\n", cfg.PywalCommand)
 
