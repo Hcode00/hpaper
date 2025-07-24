@@ -95,7 +95,7 @@ bind = SUPER SHIFT, W, exec, hpaper prev
 bind = SUPER, SEMICOLON, exec, hpaper current
 ```
 
-**Advanced Configuration:**
+**Configuration Example:**
 ```conf
 # ~/.config/hpaper/hpaper.conf
 wallpaper_dir = /home/user/wallpapers
