@@ -18,7 +18,7 @@ func LoadWallpapers(wallpaperDir string, randomize bool) ([]string, error) {
 		if !file.IsDir() {
 			name := file.Name()
 			ext := strings.ToLower(filepath.Ext(name))
-			if ext == ".jpg" || ext == ".jpeg" || ext == ".png" {
+			if ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".gif" || ext == ".bmp" || ext == ".webp" {
 				wallpapers = append(wallpapers, filepath.Join(wallpaperDir, name))
 			}
 		}
