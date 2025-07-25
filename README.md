@@ -1,6 +1,6 @@
 # hpaper: Advanced Wallpaper Management for Wayland
 
-hpaper is a powerful Go-based wallpaper management daemon for Wayland compositors that provides automated rotation, multi-backend support, and seamless integration with your desktop environment.
+hpaper is a blazingly fast Go-based wallpaper management daemon for Wayland compositors that provides automated and manual rotation, multi-backend support, and seamless integration with your desktop environment.
 
 ## Video Showcase
 
@@ -14,6 +14,7 @@ hpaper is a powerful Go-based wallpaper management daemon for Wayland compositor
 - **Pywal Integration**: Optional automatic color scheme generation using pywal for system-wide theming.
 - **Flexible Rotation**: Customizable auto-rotation intervals with manual control and timer reset functionality.
 - **Monitor-Specific Control**: Supports per-monitor wallpaper management for multi-display setups.
+- **Low Memory Usage**: uses just about 1 to 8 megabytes of memory.
 
 ## How It Works
 
@@ -92,7 +93,6 @@ exec-once = hpaper start ~/.config/hypr/wallpapers/
 # Wallpaper controls
 bind = SUPER, W, exec, hpaper next
 bind = SUPER SHIFT, W, exec, hpaper prev
-bind = SUPER, SEMICOLON, exec, hpaper current
 ```
 
 **Configuration Example:**
