@@ -4,6 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>hpaper - Dynamic Wallpaper Manager for Wayland</title>
+    <!-- Tailwind CSS with Dark Mode Configuration -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        // Define light mode colors (already in custom style block)
+                        // Define dark mode colors if specific overrides are needed beyond dark: variants
+                        // e.g., darkPrimary: '#1a1a1a',
+                    }
+                }
+            }
+        }
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,21 +28,22 @@
     <!-- Visualization & Content Choices: Key Features -> Goal: Inform -> Icon Cards -> More visual than bullets. How It Works -> Goal: Organize/Inform -> CSS Diagram -> More engaging than text. Configuration -> Goal: Engage/Inform -> Interactive Code Block -> Teaches config options dynamically. Commands/Examples -> Goal: Usability -> Code blocks with copy buttons -> Reduces user effort. All implemented with HTML/Tailwind/JS, no SVG/Mermaid. -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
+        /* Light Mode Defaults */
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #FDFBF8;
-            color: #4A4A4A;
+            background-color: #FDFBF8; /* Light Beige */
+            color: #5A5A5A; /* Medium Warm Gray - Adjusted */
         }
         .bg-primary { background-color: #FDFBF8; }
-        .bg-secondary { background-color: #F5F2ED; }
-        .text-heading { color: #333333; }
-        .text-body { color: #4A4A4A; }
-        .text-accent { color: #E58D67; }
+        .bg-secondary { background-color: #F5F2ED; } /* Lighter Beige */
+        .text-heading { color: #3A3A3A; } /* Warm Dark Gray/Charcoal - Adjusted */
+        .text-body { color: #5A5A5A; } /* Medium Warm Gray - Adjusted */
+        .text-accent { color: #E58D67; } /* Subtle Orange */
         .border-accent { border-color: #E58D67; }
         .bg-accent { background-color: #E58D67; }
         .bg-accent-hover:hover { background-color: #D97B56; }
         .code-block {
-            background-color: #2D2D2D;
+            background-color: #2D2D2D; /* Dark Gray for code */
             color: #EAEAEA;
             border-radius: 0.5rem;
             padding: 1rem;
@@ -60,20 +76,56 @@
             padding: 4px;
             transform: rotate(-45deg);
         }
+
+        /* Dark Mode Overrides (using Tailwind's dark: prefix for most) */
+        html.dark body {
+            background-color: #1A1A1A; /* Darker background */
+            color: #D1D5DB; /* Lighter text */
+        }
+        html.dark .bg-primary { background-color: #1A1A1A; }
+        html.dark .bg-secondary { background-color: #2A2A2A; }
+        html.dark .text-heading { color: #F8F8F8; }
+        html.dark .text-body { color: #D1D5DB; }
+        html.dark .diagram-box {
+            background-color: #333333;
+            border-color: #4A4A4A;
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.3), 0 1px 2px -1px rgb(0 0 0 / 0.3);
+        }
+        html.dark .diagram-arrow {
+            background-color: #6B7280;
+        }
+        html.dark .diagram-arrow::after {
+            border-color: #6B7280;
+        }
+        html.dark .bg-gray-200 { /* For inactive buttons in dark mode */
+            background-color: #4A4A4A;
+            color: #D1D5DB;
+        }
+        html.dark .bg-gray-600 { /* For copy buttons in dark mode */
+            background-color: #555555;
+        }
+        html.dark .hover\:bg-gray-500:hover {
+            background-color: #666666;
+        }
     </style>
 </head>
-<body class="bg-primary">
+<body class="bg-primary text-body">
 
-    <header class="sticky top-0 z-50 bg-primary/80 backdrop-blur-sm border-b border-gray-200">
+    <header class="sticky top-0 z-50 bg-primary/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
         <nav class="container mx-auto px-6 py-3">
             <div class="flex justify-between items-center">
-                <h1 class="text-xl font-bold text-heading">hpaper</h1>
-                <div class="hidden md:flex space-x-6 text-sm font-medium">
-                    <a href="#features" class="text-body hover:text-accent transition-colors">Features</a>
-                    <a href="#how-it-works" class="text-body hover:text-accent transition-colors">How It Works</a>
-                    <a href="#installation" class="text-body hover:text-accent transition-colors">Installation</a>
-                    <a href="#configuration" class="text-body hover:text-accent transition-colors">Configuration</a>
-                    <a href="#usage" class="text-body hover:text-accent transition-colors">Usage</a>
+                <h1 class="text-xl font-bold text-heading dark:text-gray-100">hpaper</h1>
+                <div class="flex items-center space-x-6 text-sm font-medium">
+                    <a href="#features" class="text-body dark:text-gray-300 hover:text-accent dark:hover:text-accent transition-colors hidden md:block">Features</a>
+                    <a href="#how-it-works" class="text-body dark:text-gray-300 hover:text-accent dark:hover:text-accent transition-colors hidden md:block">How It Works</a>
+                    <a href="#installation" class="text-body dark:text-gray-300 hover:text-accent dark:hover:text-accent transition-colors hidden md:block">Installation</a>
+                    <a href="#configuration" class="text-body dark:text-gray-300 hover:text-accent dark:hover:text-accent transition-colors hidden md:block">Configuration</a>
+                    <a href="#usage" class="text-body dark:text-gray-300 hover:text-accent dark:hover:text-accent transition-colors hidden md:block">Usage</a>
+                    
+                    <!-- Dark Mode Switcher Button -->
+                    <button id="theme-switcher" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                        <span id="theme-icon">☀️</span>
+                    </button>
                 </div>
             </div>
         </nav>
@@ -81,8 +133,8 @@
 
     <main class="container mx-auto px-6 py-12">
         <section class="text-center pt-12 pb-20">
-            <h1 class="text-5xl md:text-6xl font-bold text-heading mb-4">Dynamic Wallpaper Manager for Wayland</h1>
-            <p class="text-lg md:text-xl max-w-3xl mx-auto text-body">
+            <h1 class="text-5xl md:text-6xl font-bold text-heading dark:text-black-100 mb-4">Dynamic Wallpaper Manager for Wayland</h1>
+            <p class="text-lg md:text-xl max-w-3xl mx-auto text-body dark:text-black-300">
                 A lightweight Go application to automate your wallpapers with `Swaybg` or `Hyprpaper`, featuring powerful `pywal` integration for dynamic theming.
             </p>
             <div class="mt-8">
@@ -93,76 +145,74 @@
         </section>
         
         <section id="showcase" class="my-16">
-             <div class="bg-secondary rounded-lg p-8 text-center">
-                <h2 class="text-2xl font-bold text-heading mb-4">Showcase Video</h2>
-                <div class="aspect-video bg-gray-300 rounded-md flex items-center justify-center">
-                    <p class="text-gray-500">A demonstration video will be available here soon!</p>
+             <div class="bg-secondary dark:bg-gray-800 rounded-lg p-8 text-center">
+                <h2 class="text-2xl font-bold text-heading dark:text-gray-100 mb-4">Showcase Video</h2>
+                <div class="aspect-video flex items-center justify-center rounded-md overflow-hidden">
+                    <img src="showcase.gif" alt="hpaper demonstration" class="w-full h-full object-contain rounded-md">
                 </div>
-                <p class="text-sm text-body mt-4 max-w-2xl mx-auto">
-                    The showcase will demonstrate automatic rotation, manual switching with `next`/`prev`, and the dynamic theme changes powered by the `pywal` integration.
-                </p>
+                <!-- Removed descriptive text as requested -->
              </div>
         </section>
 
         <section id="features" class="my-24 scroll-mt-20">
-            <h2 class="text-3xl font-bold text-heading text-center mb-12">Key Features</h2>
+            <h2 class="text-3xl font-bold text-heading dark:text-gray-100 text-center mb-12">Key Features</h2>
             <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <div class="bg-white p-6 rounded-lg shadow-sm">
+                <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow-sm">
                     <span class="text-3xl">🔄</span>
-                    <h3 class="font-semibold text-lg mt-4 mb-2 text-heading">Intelligent Rotation</h3>
-                    <p class="text-body text-sm">Automatically cycles through your wallpaper collection at customizable intervals.</p>
+                    <h3 class="font-semibold text-lg mt-4 mb-2 text-heading dark:text-gray-100">Intelligent Rotation</h3>
+                    <p class="text-body dark:text-gray-300 text-sm">Automatically cycles through your wallpaper collection at customizable intervals.</p>
                 </div>
-                <div class="bg-white p-6 rounded-lg shadow-sm">
+                <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow-sm">
                     <span class="text-3xl">🕹️</span>
-                    <h3 class="font-semibold text-lg mt-4 mb-2 text-heading">Manual Control</h3>
-                    <p class="text-body text-sm">Easily switch to the next or previous wallpaper on demand using simple commands.</p>
+                    <h3 class="font-semibold text-lg mt-4 mb-2 text-heading dark:text-gray-100">Manual Control</h3>
+                    <p class="text-body dark:text-gray-300 text-sm">Easily switch to the next or previous wallpaper on demand using simple commands.</p>
                 </div>
-                <div class="bg-white p-6 rounded-lg shadow-sm">
+                <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow-sm">
                     <span class="text-3xl">🖥️</span>
-                    <h3 class="font-semibold text-lg mt-4 mb-2 text-heading">Multi-Backend Support</h3>
-                    <p class="text-body text-sm">Seamlessly works with either `Swaybg` or `Hyprpaper` to set your wallpapers.</p>
+                    <h3 class="font-semibold text-lg mt-4 mb-2 text-heading dark:text-gray-100">Multi-Backend Support</h3>
+                    <p class="text-body dark:text-gray-300 text-sm">Seamlessly works with either `Swaybg` or `Hyprpaper` to set your wallpapers.</p>
                 </div>
-                <div class="bg-white p-6 rounded-lg shadow-sm">
+                <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow-sm">
                     <span class="text-3xl">🎨</span>
-                    <h3 class="font-semibold text-lg mt-4 mb-2 text-heading">Pywal Integration</h3>
-                    <p class="text-body text-sm">Dynamically extracts colors from your wallpaper to theme your entire system.</p>
+                    <h3 class="font-semibold text-lg mt-4 mb-2 text-heading dark:text-gray-100">Pywal Integration</h3>
+                    <p class="text-body dark:text-gray-300 text-sm">Dynamically extracts colors from your wallpaper to theme your entire system.</p>
                 </div>
-                <div class="bg-white p-6 rounded-lg shadow-sm">
+                <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow-sm">
                     <span class="text-3xl">⚙️</span>
-                    <h3 class="font-semibold text-lg mt-4 mb-2 text-heading">Highly Configurable</h3>
-                    <p class="text-body text-sm">Manage all behavior, from rotation interval to backend choice, via a simple config file.</p>
+                    <h3 class="font-semibold text-lg mt-4 mb-2 text-heading dark:text-gray-100">Highly Configurable</h3>
+                    <p class="text-body dark:text-gray-300 text-sm">Manage all behavior, from rotation interval to backend choice, via a simple config file.</p>
                 </div>
-                <div class="bg-white p-6 rounded-lg shadow-sm">
+                <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow-sm">
                     <span class="text-3xl">🔍</span>
-                    <h3 class="font-semibold text-lg mt-4 mb-2 text-heading">Current Wallpaper Query</h3>
-                    <p class="text-body text-sm">Quickly find out which wallpaper is currently active with the `current` command.</p>
+                    <h3 class="font-semibold text-lg mt-4 mb-2 text-heading dark:text-gray-100">Current Wallpaper Query</h3>
+                    <p class="text-body dark:text-gray-300 text-sm">Quickly find out which wallpaper is currently active with the `current` command.</p>
                 </div>
             </div>
         </section>
 
         <section id="how-it-works" class="my-24 scroll-mt-20">
-            <h2 class="text-3xl font-bold text-heading text-center mb-12">How It Works</h2>
-            <div class="bg-white p-8 rounded-lg shadow-sm">
-                <p class="text-center text-body mb-8">`hpaper` runs as a persistent daemon, listening for commands via a Unix socket. When a wallpaper change is triggered (manually or automatically), it communicates with your chosen backend and `pywal`.</p>
+            <h2 class="text-3xl font-bold text-heading dark:text-gray-100 text-center mb-12">How It Works</h2>
+            <div class="bg-white dark:bg-gray-700 p-8 rounded-lg shadow-sm">
+                <p class="text-center text-body dark:text-gray-300 mb-8">`hpaper` runs as a persistent daemon, listening for commands via a Unix socket. When a wallpaper change is triggered (manually or automatically), it communicates with your chosen backend and `pywal`.</p>
                 <div class="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-4">
                     <div class="diagram-box w-full md:w-auto">
                         <p class="font-mono text-sm">hpaper next</p>
-                        <p class="text-xs text-gray-500">(Client)</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">(Client)</p>
                     </div>
                     <div class="diagram-arrow w-px h-8 md:w-auto md:h-px"></div>
                     <div class="diagram-box w-full md:w-auto">
                         <p class="font-semibold">hpaper Daemon</p>
-                        <p class="text-xs text-gray-500">(Unix Socket)</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">(Unix Socket)</p>
                     </div>
                     <div class="diagram-arrow w-px h-8 md:w-auto md:h-px"></div>
                     <div class="flex flex-col space-y-2">
-                         <div class="diagram-box w-full md:w-auto">
+                        <div class="diagram-box w-full md:w-auto">
                             <p class="font-mono text-sm">Swaybg / Hyprpaper</p>
-                             <p class="text-xs text-gray-500">(Backend)</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">(Backend)</p>
                         </div>
                         <div class="diagram-box w-full md:w-auto">
                             <p class="font-mono text-sm">pywal</p>
-                             <p class="text-xs text-gray-500">(Theming)</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">(Theming)</p>
                         </div>
                     </div>
                 </div>
@@ -170,63 +220,63 @@
         </section>
 
         <section id="installation" class="my-24 scroll-mt-20">
-            <h2 class="text-3xl font-bold text-heading text-center mb-12">Installation</h2>
+            <h2 class="text-3xl font-bold text-heading dark:text-gray-100 text-center mb-12">Installation</h2>
             <div class="max-w-3xl mx-auto space-y-8">
                 <div>
-                    <h3 class="font-semibold text-lg mb-2 text-heading">Arch Linux (AUR)</h3>
+                    <h3 class="font-semibold text-lg mb-2 text-heading dark:text-gray-100">Arch Linux (AUR)</h3>
                     <div class="relative">
                         <pre class="code-block"><code id="code-aur">paru -S hpaper</code></pre>
                         <button onclick="copyToClipboard('code-aur')" class="absolute top-2 right-2 bg-gray-600 text-white text-xs px-2 py-1 rounded hover:bg-gray-500 transition-colors">Copy</button>
                     </div>
                 </div>
                 <div>
-                    <h3 class="font-semibold text-lg mb-2 text-heading">Go Install</h3>
+                    <h3 class="font-semibold text-lg mb-2 text-heading dark:text-gray-100">Go Install</h3>
                     <div class="relative">
                         <pre class="code-block"><code id="code-go">go install github.com/Hcode00/hpaper</code></pre>
                         <button onclick="copyToClipboard('code-go')" class="absolute top-2 right-2 bg-gray-600 text-white text-xs px-2 py-1 rounded hover:bg-gray-500 transition-colors">Copy</button>
                     </div>
                 </div>
                 <div>
-                    <h3 class="font-semibold text-lg mb-2 text-heading">From Release</h3>
-                    <p class="text-body">You can also download a pre-compiled binary from the <a href="https://github.com/Hcode00/hpaper/releases" target="_blank" class="text-accent font-medium hover:underline">release page</a>.</p>
+                    <h3 class="font-semibold text-lg mb-2 text-heading dark:text-gray-100">From Release</h3>
+                    <p class="text-body dark:text-gray-300">You can also download a pre-compiled binary from the <a href="https://github.com/Hcode00/hpaper/releases" target="_blank" class="text-accent font-medium hover:underline">release page</a>.</p>
+                    </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <section id="configuration" class="my-24 scroll-mt-20">
-            <h2 class="text-3xl font-bold text-heading text-center mb-4">Configuration</h2>
-            <p class="text-center text-body mb-12 max-w-3xl mx-auto">
-                `hpaper` is controlled by a simple config file at <code class="text-sm bg-secondary px-1 py-0.5 rounded">~/.config/hpaper/hpaper.conf</code>. If it doesn't exist, it's created on the first run. Try the controls below to see how it works!
-            </p>
-            <div class="grid lg:grid-cols-3 gap-8">
-                <div class="lg:col-span-1 bg-white p-6 rounded-lg shadow-sm">
-                    <h3 class="font-semibold text-lg mb-4 text-heading">Interactive Demo</h3>
-                    <div class="space-y-4 text-sm">
-                        <div>
-                            <label class="font-medium">Randomize</label>
-                            <div class="flex space-x-2 mt-1">
-                                <button id="btn-random-true" onclick="setConfig('randomize', 'true')" class="flex-1 bg-accent text-white px-3 py-1 rounded">True</button>
-                                <button id="btn-random-false" onclick="setConfig('randomize', 'false')" class="flex-1 bg-gray-200 text-gray-700 px-3 py-1 rounded">False</button>
+            <section id="configuration" class="my-24 scroll-mt-20">
+                <h2 class="text-3xl font-bold text-heading dark:text-gray-100 text-center mb-4">Configuration</h2>
+                <p class="text-center text-body dark:text-gray-300 mb-12 max-w-3xl mx-auto">
+                    `hpaper` is controlled by a simple config file at <code class="text-sm bg-secondary dark:bg-gray-800 px-1 py-0.5 rounded">~/.config/hpaper/hpaper.conf</code>. If it doesn't exist, it's created on the first run. Try the controls below to see how it works!
+                </p>
+                <div class="grid lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-1 bg-white dark:bg-gray-700 p-6 rounded-lg shadow-sm">
+                        <h3 class="font-semibold text-lg mb-4 text-heading dark:text-gray-100">Interactive Demo</h3>
+                        <div class="space-y-4 text-sm">
+                            <div>
+                                <label class="font-medium">Randomize</label>
+                                <div class="flex space-x-2 mt-1">
+                                    <button id="btn-random-true" onclick="setConfig('randomize', 'true')" class="flex-1 bg-accent text-white px-3 py-1 rounded">True</button>
+                                    <button id="btn-random-false" onclick="setConfig('randomize', 'false')" class="flex-1 bg-gray-200 text-gray-700 px-3 py-1 rounded">False</button>
+                                </div>
                             </div>
-                        </div>
-                        <div>
-                            <label class="font-medium">Backend</label>
-                            <div class="flex space-x-2 mt-1">
-                                <button id="btn-backend-swaybg" onclick="setConfig('backend', 'swaybg')" class="flex-1 bg-accent text-white px-3 py-1 rounded">swaybg</button>
-                                <button id="btn-backend-hyprpaper" onclick="setConfig('backend', 'hyprpaper')" class="flex-1 bg-gray-200 text-gray-700 px-3 py-1 rounded">hyprpaper</button>
+                            <div>
+                                <label class="font-medium">Backend</label>
+                                <div class="flex space-x-2 mt-1">
+                                    <button id="btn-backend-swaybg" onclick="setConfig('backend', 'swaybg')" class="flex-1 bg-accent text-white px-3 py-1 rounded">swaybg</button>
+                                    <button id="btn-backend-hyprpaper" onclick="setConfig('backend', 'hyprpaper')" class="flex-1 bg-gray-200 text-gray-700 px-3 py-1 rounded">hyprpaper</button>
+                                </div>
                             </div>
-                        </div>
-                         <div>
-                            <label class="font-medium">Enable Pywal</label>
-                            <div class="flex space-x-2 mt-1">
-                                <button id="btn-pywal-true" onclick="setConfig('pywal_enabled', 'true')" class="flex-1 bg-accent text-white px-3 py-1 rounded">True</button>
-                                <button id="btn-pywal-false" onclick="setConfig('pywal_enabled', 'false')" class="flex-1 bg-gray-200 text-gray-700 px-3 py-1 rounded">False</button>
+                            <div>
+                                <label class="font-medium">Enable Pywal</label>
+                                <div class="flex space-x-2 mt-1">
+                                    <button id="btn-pywal-true" onclick="setConfig('pywal_enabled', 'true')" class="flex-1 bg-gray-200 text-gray-700 px-3 py-1 rounded">True</button>
+                                    <button id="btn-pywal-false" onclick="setConfig('pywal_enabled', 'false')" class="flex-1 bg-accent text-white px-3 py-1 rounded">False</button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                <div class="lg:col-span-2 relative">
-                    <pre class="code-block h-full"><code id="code-config"># General Settings
+                    <div class="lg:col-span-2 relative">
+                        <pre class="code-block h-full"><code id="code-config"># General Settings
 wallpaper_dir = /home/user/Pictures/wallpapers/
 rotation_interval = 3600
 randomize = <span class="text-accent font-bold" id="config-randomize">true</span>
@@ -240,42 +290,42 @@ swaybg_output = ""
 monitor_name = "all"
 
 # pywal settings
-pywal_enabled = <span class="text-accent font-bold" id="config-pywal_enabled">true</span>
+pywal_enabled = <span class="text-accent font-bold" id="config-pywal_enabled">false</span>
 pywal_command = "wal --cols16 -n"
 </code></pre>
-                    <button onclick="copyToClipboard('code-config')" class="absolute top-2 right-2 bg-gray-600 text-white text-xs px-2 py-1 rounded hover:bg-gray-500 transition-colors">Copy</button>
+                        <button onclick="copyToClipboard('code-config')" class="absolute top-2 right-2 bg-gray-600 text-white text-xs px-2 py-1 rounded hover:bg-gray-500 transition-colors">Copy</button>
+                    </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <section id="usage" class="my-24 scroll-mt-20">
-            <h2 class="text-3xl font-bold text-heading text-center mb-12">Usage</h2>
-            <div class="space-y-8">
-                <div>
-                    <h3 class="font-semibold text-lg mb-2 text-heading">Daemon Command</h3>
-                    <div class="relative">
-                        <pre class="code-block"><code id="code-start"># Start the daemon, overriding the config's wallpaper directory
+            <section id="usage" class="my-24 scroll-mt-20">
+                <h2 class="text-3xl font-bold text-heading dark:text-gray-100 text-center mb-12">Usage</h2>
+                <div class="space-y-8">
+                    <div>
+                        <h3 class="font-semibold text-lg mb-2 text-heading dark:text-gray-100">Daemon Command</h3>
+                        <div class="relative">
+                            <pre class="code-block"><code id="code-start"># Start the daemon, overriding the config's wallpaper directory
 hpaper start &lt;wallpaper_directory&gt; [flags]
 
 # Example:
 hpaper start ~/wallpapers/</code></pre>
-                        <button onclick="copyToClipboard('code-start')" class="absolute top-2 right-2 bg-gray-600 text-white text-xs px-2 py-1 rounded hover:bg-gray-500 transition-colors">Copy</button>
+                            <button onclick="copyToClipboard('code-start')" class="absolute top-2 right-2 bg-gray-600 text-white text-xs px-2 py-1 rounded hover:bg-gray-500 transition-colors">Copy</button>
+                        </div>
                     </div>
-                </div>
-                <div>
-                    <h3 class="font-semibold text-lg mb-2 text-heading">Client Commands</h3>
-                     <div class="relative">
-                        <pre class="code-block"><code id="code-client">hpaper next
+                    <div>
+                        <h3 class="font-semibold text-lg mb-2 text-heading dark:text-gray-100">Client Commands</h3>
+                        <div class="relative">
+                            <pre class="code-block"><code id="code-client">hpaper next
 hpaper prev
 hpaper current
 hpaper quit</code></pre>
-                        <button onclick="copyToClipboard('code-client')" class="absolute top-2 right-2 bg-gray-600 text-white text-xs px-2 py-1 rounded hover:bg-gray-500 transition-colors">Copy</button>
+                            <button onclick="copyToClipboard('code-client')" class="absolute top-2 right-2 bg-gray-600 text-white text-xs px-2 py-1 rounded hover:bg-gray-500 transition-colors">Copy</button>
+                        </div>
                     </div>
-                </div>
-                 <div>
-                    <h3 class="font-semibold text-lg mb-2 text-heading">Hyprland Integration Example</h3>
-                     <div class="relative">
-                        <pre class="code-block"><code id="code-hyprland"># In ~/.config/hypr/hyprland.conf
+                    <div>
+                        <h3 class="font-semibold text-lg mb-2 text-heading dark:text-gray-100">Hyprland Integration Example</h3>
+                        <div class="relative">
+                            <pre class="code-block"><code id="code-hyprland"># In ~/.config/hypr/hyprland.conf
 
 # Start hpaper on login
 exec-once = hpaper start ~/.config/hypr/wallpapers/
@@ -283,95 +333,154 @@ exec-once = hpaper start ~/.config/hypr/wallpapers/
 # Bind keys to control hpaper
 bind = SUPER, W, exec, hpaper next
 bind = SUPER SHIFT, W, exec, hpaper prev</code></pre>
-                        <button onclick="copyToClipboard('code-hyprland')" class="absolute top-2 right-2 bg-gray-600 text-white text-xs px-2 py-1 rounded hover:bg-gray-500 transition-colors">Copy</button>
+                            <button onclick="copyToClipboard('code-hyprland')" class="absolute top-2 right-2 bg-gray-600 text-white text-xs px-2 py-1 rounded hover:bg-gray-500 transition-colors">Copy</button>
+                        </div>
                     </div>
                 </div>
+            </section>
+
+        </main>
+
+        <footer class="bg-secondary dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+            <div class="container mx-auto px-6 py-4 text-center text-sm text-body dark:text-gray-300">
+                <p>&copy; 2025 hpaper. Released under the GPL-3.0 license.</p>
             </div>
-        </section>
+        </footer>
 
-    </main>
-
-    <footer class="bg-secondary border-t border-gray-200">
-        <div class="container mx-auto px-6 py-4 text-center text-sm text-body">
-            <p>&copy; 2024 hpaper. Released under the MIT License.</p>
+        <div id="copy-notification" class="fixed bottom-5 right-5 bg-gray-800 text-white text-sm px-4 py-2 rounded-lg shadow-lg opacity-0 translate-y-2 transition-all duration-300">
+            Copied to clipboard!
         </div>
-    </footer>
 
-    <div id="copy-notification" class="fixed bottom-5 right-5 bg-gray-800 text-white text-sm px-4 py-2 rounded-lg shadow-lg opacity-0 translate-y-2 transition-all duration-300">
-        Copied to clipboard!
-    </div>
-
-    <script>
-        function copyToClipboard(elementId) {
-            const codeEl = document.getElementById(elementId);
-            const text = codeEl.innerText;
-            
-            const textarea = document.createElement('textarea');
-            textarea.value = text;
-            document.body.appendChild(textarea);
-            textarea.select();
-            try {
-                document.execCommand('copy');
-                showCopyNotification();
-            } catch (err) {
-                console.error('Failed to copy text: ', err);
+        <script>
+            // Function to copy code to clipboard
+            function copyToClipboard(elementId) {
+                const codeEl = document.getElementById(elementId);
+                // Remove leading whitespace from each line for accurate copying
+                const text = codeEl.innerText.split('\n').map(line => line.trimStart()).join('\n').trim();
+                
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    showCopyNotification();
+                } catch (err) {
+                    console.error('Failed to copy text: ', err);
+                }
+                document.body.removeChild(textarea);
             }
-            document.body.removeChild(textarea);
-        }
 
-        function showCopyNotification() {
-            const notification = document.getElementById('copy-notification');
-            notification.classList.remove('opacity-0', 'translate-y-2');
-            notification.classList.add('opacity-100', 'translate-y-0');
-            setTimeout(() => {
-                notification.classList.remove('opacity-100', 'translate-y-0');
-                notification.classList.add('opacity-0', 'translate-y-2');
-            }, 2000);
-        }
+            // Function to show copy notification
+            function showCopyNotification() {
+                const notification = document.getElementById('copy-notification');
+                notification.classList.remove('opacity-0', 'translate-y-2');
+                notification.classList.add('opacity-100', 'translate-y-0');
+                setTimeout(() => {
+                    notification.classList.remove('opacity-100', 'translate-y-0');
+                    notification.classList.add('opacity-0', 'translate-y-2');
+                }, 2000);
+            }
 
-        function setConfig(key, value) {
-            const el = document.getElementById(`config-${key}`);
-            if (el) {
-                let displayValue = value;
+            // Function to update config display and button styling
+            function setConfig(key, value) {
+                const el = document.getElementById(`config-${key}`);
+                if (el) {
+                    let displayValue = value;
+                    if (key === 'backend') {
+                        displayValue = `"${value}"`;
+                    }
+                    el.innerText = displayValue;
+                }
+
+                // Get button elements
+                <!-- const trueBtn = document.getElementById(`btn-${key}-true`); -->
+                <!-- const falseBtn = document.getElementById(`btn-${key}-false`); -->
+                const pywalEnabledBtn = document.getElementById(`btn-pywal-true`);
+                const randomizeTrueBtn = document.getElementById(`btn-random-true`);
+                const swaybgBtn = document.getElementById(`btn-backend-swaybg`);
+                const hyprpaperBtn = document.getElementById(`btn-backend-hyprpaper`);
+
+                // Logic for Backend buttons
                 if (key === 'backend') {
-                    displayValue = `"${value}"`;
+                    if (value === 'swaybg') {
+                        swaybgBtn.classList.add('bg-accent', 'text-white');
+                        swaybgBtn.classList.remove('bg-gray-200', 'text-gray-700');
+                        hyprpaperBtn.classList.remove('bg-accent', 'text-white');
+                        hyprpaperBtn.classList.add('bg-gray-200', 'text-gray-700');
+                    } else { // value === 'hyprpaper'
+                        hyprpaperBtn.classList.add('bg-accent', 'text-white');
+                        hyprpaperBtn.classList.remove('bg-gray-200', 'text-gray-700');
+                        swaybgBtn.classList.remove('bg-accent', 'text-white');
+                        swaybgBtn.classList.add('bg-gray-200', 'text-gray-700');
+                    }
+                } 
+                if (key === 'randomize') {
+                    if (value === 'true') {
+                        randomizeTrueBtn.classList.add('bg-accent', 'text-white');
+                        randomizeTrueBtn.classList.remove('bg-gray-200', 'text-gray-700');
+                        document.getElementById('btn-random-false').classList.remove('bg-accent', 'text-white');
+                        document.getElementById('btn-random-false').classList.add('bg-gray-200', 'text-gray-700');
+                    } else { // value === 'false'
+                        document.getElementById('btn-random-false').classList.add('bg-accent', 'text-white');
+                        document.getElementById('btn-random-false').classList.remove('bg-gray-200', 'text-gray-700');
+                        randomizeTrueBtn.classList.remove('bg-accent', 'text-white');
+                        randomizeTrueBtn.classList.add('bg-gray-200', 'text-gray-700');
+                    }
                 }
-                el.innerText = displayValue;
+                if (key === 'pywal_enabled') {
+                    if (value === 'true') {
+                        pywalEnabledBtn.classList.add('bg-accent', 'text-white');
+                        pywalEnabledBtn.classList.remove('bg-gray-200', 'text-gray-700');
+                        document.getElementById('btn-pywal-false').classList.remove('bg-accent', 'text-white');
+                        document.getElementById('btn-pywal-false').classList.add('bg-gray-200', 'text-gray-700');
+                    } else { // value === 'false'
+                        document.getElementById('btn-pywal-false').classList.add('bg-accent', 'text-white');
+                        document.getElementById('btn-pywal-false').classList.remove('bg-gray-200', 'text-gray-700');
+                        pywalEnabledBtn.classList.remove('bg-accent', 'text-white');
+                        pywalEnabledBtn.classList.add('bg-gray-200', 'text-gray-700');
+                    }
+                }
             }
 
-            // Button styling logic
-            const trueBtn = document.getElementById(`btn-${key}-true`);
-            const falseBtn = document.getElementById(`btn-${key}-false`);
-            const swaybgBtn = document.getElementById(`btn-backend-swaybg`);
-            const hyprpaperBtn = document.getElementById(`btn-backend-hyprpaper`);
+            // Dark Mode Logic
+            const themeSwitcher = document.getElementById('theme-switcher');
+            const themeIcon = document.getElementById('theme-icon');
+            const htmlElement = document.documentElement;
 
-            if (key === 'backend') {
-                if (value === 'swaybg') {
-                    swaybgBtn.classList.add('bg-accent', 'text-white');
-                    swaybgBtn.classList.remove('bg-gray-200', 'text-gray-700');
-                    hyprpaperBtn.classList.remove('bg-accent', 'text-white');
-                    hyprpaperBtn.classList.add('bg-gray-200', 'text-gray-700');
-                } else {
-                    hyprpaperBtn.classList.add('bg-accent', 'text-white');
-                    hyprpaperBtn.classList.remove('bg-gray-200', 'text-gray-700');
-                    swaybgBtn.classList.remove('bg-accent', 'text-white');
-                    swaybgBtn.classList.add('bg-gray-200', 'text-gray-700');
-                }
+            // Apply theme on load
+            const currentTheme = localStorage.getItem('theme');
+            if (currentTheme === 'dark') {
+                htmlElement.classList.add('dark');
+                themeIcon.textContent = '🌙'; // Moon icon for dark mode
             } else {
-                 if (value === 'true') {
-                    trueBtn.classList.add('bg-accent', 'text-white');
-                    trueBtn.classList.remove('bg-gray-200', 'text-gray-700');
-                    falseBtn.classList.remove('bg-accent', 'text-white');
-                    falseBtn.classList.add('bg-gray-200', 'text-gray-700');
-                } else {
-                    falseBtn.classList.add('bg-accent', 'text-white');
-                    falseBtn.classList.remove('bg-gray-200', 'text-gray-700');
-                    trueBtn.classList.remove('bg-accent', 'text-white');
-                    trueBtn.classList.add('bg-gray-200', 'text-gray-700');
-                }
+                htmlElement.classList.remove('dark');
+                themeIcon.textContent = '☀️'; // Sun icon for light mode
             }
-        }
-    </script>
 
-</body>
-</html>
+            // Toggle theme on button click
+            themeSwitcher.addEventListener('click', () => {
+                if (htmlElement.classList.contains('dark')) {
+                    htmlElement.classList.remove('dark');
+                    localStorage.setItem('theme', 'light');
+                    themeIcon.textContent = '☀️';
+                } else {
+                    htmlElement.classList.add('dark');
+                    localStorage.setItem('theme', 'dark');
+                    themeIcon.textContent = '🌙';
+                }
+            });
+
+            // Initialize button states based on default config values
+            document.addEventListener('DOMContentLoaded', () => {
+                // Initial state for Randomize (default: true)
+                setConfig('randomize', 'true'); 
+                // Initial state for Backend (default: swaybg)
+                setConfig('backend', 'swaybg');
+                // Initial state for Enable Pywal (default: false)
+                setConfig('pywal_enabled', 'false'); 
+            });
+        </script>
+
+    </body>
+    </html>
