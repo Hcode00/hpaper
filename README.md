@@ -53,6 +53,7 @@ hpaper start <wallpaper_directory> -config /path/to/config.conf
 hpaper next      # Switch to next wallpaper
 hpaper prev      # Switch to previous wallpaper  
 hpaper current   # Get path of current wallpaper
+hpaper reload    # Reload wallpaper list (after changing symlink target)
 hpaper quit      # Stop the daemon
 ```
 

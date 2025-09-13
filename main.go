@@ -27,11 +27,14 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "    Switches to the previous wallpaper.\n")
 	fmt.Fprintf(os.Stderr, "\n  current\n")
 	fmt.Fprintf(os.Stderr, "    Returns the path to the currently applied wallpaper.\n")
+	fmt.Fprintf(os.Stderr, "\n  reload\n")
+	fmt.Fprintf(os.Stderr, "    Reloads the wallpaper list from the directory (use after changing a symlink target).\n")
 	fmt.Fprintf(os.Stderr, "\n  quit\n")
 	fmt.Fprintf(os.Stderr, "    Sends a signal to the running daemon to quit.\n")
 	fmt.Fprintf(os.Stderr, "\nExample:\n")
 	fmt.Fprintf(os.Stderr, "  %s start ~/my_wallpapers/ \n", os.Args[0])
 	fmt.Fprintf(os.Stderr, "  %s next\n", os.Args[0])
+	fmt.Fprintf(os.Stderr, "  %s reload\n", os.Args[0])
 	fmt.Fprintf(os.Stderr, "  %s current\n", os.Args[0])
 }
 
@@ -106,6 +109,8 @@ func main() {
 		daemon.RunClientMode(backends.ActionQuit)
 	case "current":
 		daemon.RunClientMode(backends.ActionCurrent)
+	case string(backends.ActionReload):
+		daemon.RunClientMode(backends.ActionReload)
 	case "help", "--help", "-h":
 		usage()
 	default:

@@ -15,6 +15,7 @@ const (
 	ActionPrev    WallpaperAction = "prev"
 	ActionQuit    WallpaperAction = "quit"
 	ActionCurrent WallpaperAction = "current"
+	ActionReload  WallpaperAction = "reload"
 )
 
 const (

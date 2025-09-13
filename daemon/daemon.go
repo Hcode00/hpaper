@@ -93,6 +93,12 @@ func (wm *WallpaperManager) RunDaemon() {
 				path := wm.currentWallpaperPath
 				wm.mu.Unlock()
 				msg.ResponseChan <- path
+			case backends.ActionReload:
+				if err := wm.reloadWallpapers(); err != nil {
+					msg.ResponseChan <- fmt.Sprintf("Error: %v", err)
+				} else {
+					msg.ResponseChan <- "OK"
+				}
 			default:
 				msg.ResponseChan <- "Error: Unknown command"
 			}
@@ -183,4 +189,41 @@ func (wm *WallpaperManager) setPrevWallpaper() {
 	if err := wm.SetWallpaper(prevWallpaper); err != nil {
 		log.Printf("Error setting previous wallpaper: %v", err)
 	}
+}
+
+func (wm *WallpaperManager) reloadWallpapers() error {
+	newList, err := utils.LoadWallpapers(wm.config.WallpaperDir, wm.config.Randomize)
+	if err != nil {
+		return fmt.Errorf("failed to reload wallpapers: %w", err)
+	}
+	if len(newList) == 0 {
+		return fmt.Errorf("no wallpapers found in %s after reload", wm.config.WallpaperDir)
+	}
+
+	wm.mu.Lock()
+	oldCurrent := wm.currentWallpaperPath
+	wm.wallpapers = newList
+	found := -1
+	for i, p := range newList {
+		if p == oldCurrent {
+			found = i
+			break
+		}
+	}
+	if found >= 0 {
+		wm.currentIndex = found
+		wm.mu.Unlock()
+		log.Printf("Reloaded wallpapers (%d files). Current wallpaper preserved.", len(newList))
+		return nil
+	}
+	wm.currentIndex = 0
+	newCurrent := newList[0]
+	wm.currentWallpaperPath = newCurrent
+	wm.mu.Unlock()
+
+	log.Printf("Reloaded wallpapers (%d files). Current wallpaper not found; switching to %s", len(newList), newCurrent)
+	if err := wm.wallpaperBackend.SetWallpaper(newCurrent, wm.config); err != nil {
+		return fmt.Errorf("failed to set wallpaper after reload: %w", err)
+	}
+	return nil
 }
