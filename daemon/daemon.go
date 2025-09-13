@@ -77,6 +77,11 @@ func (wm *WallpaperManager) RunDaemon() {
 		}
 	}
 
+	var tickerCh <-chan time.Time
+	if ticker != nil {
+		tickerCh = ticker.C
+	}
+
 	for {
 		select {
 		case msg := <-wm.commandChan:
@@ -109,14 +114,8 @@ func (wm *WallpaperManager) RunDaemon() {
 		case <-wm.stopAutoRotate:
 			log.Println("Daemon stop signal received.")
 			return
-		default:
-			if ticker != nil {
-				select {
-				case <-ticker.C:
-					wm.setNextWallpaper()
-				default:
-				}
-			}
+		case <-tickerCh:
+			wm.setNextWallpaper()
 		}
 	}
 }
