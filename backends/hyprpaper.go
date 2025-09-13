@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"hpaper/config"
 	"log"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -22,17 +23,18 @@ func NewHyprpaperBackend(monitor string) *HyprpaperBackend {
 func (h *HyprpaperBackend) SetWallpaper(imagePath string, conf config.Config) error {
 	cmd := exec.Command("pidof", "hyprpaper")
 	output, err := cmd.CombinedOutput()
+
 	if err != nil {
-		fmt.Println("Hyprpaper is not running, starting it now...")
+		fmt.Println("Hyprpaper not running; starting it...")
 		startCmd := exec.Command("hyprpaper")
 		startCmd.Stdout = nil
 		startCmd.Stderr = nil
-		if err := startCmd.Start(); err != nil {
-			return fmt.Errorf("failed to start hyprpaper: %v", err)
+		if e := startCmd.Start(); e != nil {
+			return fmt.Errorf("failed to start hyprpaper: %v", e)
 		}
+	} else {
+		fmt.Printf("Hyprpaper already running (PIDs: %s)\n", strings.TrimSpace(string(output)))
 	}
-	time.Sleep(1 * time.Second)
-	fmt.Println("Hyprpaper Started.")
 	fmt.Printf("Setting wallpaper with Hyprpaper to: %s\n", imagePath)
 
 	monitorPart := ""
@@ -42,7 +44,44 @@ func (h *HyprpaperBackend) SetWallpaper(imagePath string, conf config.Config) er
 		monitorPart = ","
 	}
 
-	cmd = exec.Command("hyprctl", "hyprpaper", "reload", fmt.Sprintf("%s%s", monitorPart, imagePath))
+	mode := strings.TrimSpace(conf.HyprpaperMode)
+	if mode == "" {
+		mode = "cover"
+	}
+
+	hyprctlPath := os.Getenv("HPAPER_HYPRCTL")
+	if strings.TrimSpace(hyprctlPath) == "" {
+		hyprctlPath = "hyprctl"
+	}
+
+	// Preload image with retry (hyprpaper may need a moment after spawn).
+	var preloadErr error
+	for attempt := 1; attempt <= 10; attempt++ {
+		preloadCmd := exec.Command(hyprctlPath, "hyprpaper", "preload", imagePath)
+		if preloadOut, err2 := preloadCmd.CombinedOutput(); err2 != nil {
+			preloadErr = fmt.Errorf("attempt %d preload failed: %v (output: %s)", attempt, err2, strings.TrimSpace(string(preloadOut)))
+			time.Sleep(100 * time.Millisecond)
+			continue
+		} else {
+			preloadErr = nil
+			break
+		}
+	}
+	if preloadErr != nil {
+		return preloadErr
+	}
+
+	// Hyprpaper IPC:
+	// cover (default) => hyprctl hyprpaper wallpaper "MONITOR,image"
+	// tile/contain => hyprctl hyprpaper wallpaper "MONITOR,mode:image"
+	// 'all' monitor or empty uses leading comma
+	wallpaperArg := ""
+	if mode == "cover" {
+		wallpaperArg = fmt.Sprintf("%s%s", monitorPart, imagePath)
+	} else {
+		wallpaperArg = fmt.Sprintf("%s%s:%s", monitorPart, mode, imagePath)
+	}
+	cmd = exec.Command(hyprctlPath, "hyprpaper", "wallpaper", wallpaperArg)
 	output, err = cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("error setting wallpaper with hyprctl hyprpaper: %v\nOutput: %s", err, output)

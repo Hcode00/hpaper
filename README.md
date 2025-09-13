@@ -72,6 +72,7 @@ hpaper automatically creates a configuration file at `~/.config/hpaper/hpaper.co
 - **`swaybg_output`** - Target output (monitor) or `*` for all
 
 **Hyprpaper Settings:**
+- **`hyprpaper_mode`** - Display mode: `cover`, `contain`, `tile`
 - **`monitor_name`** - Monitor identifier (e.g., `DP-1`) or `all`
 
 **Pywal Integration:**
@@ -103,6 +104,7 @@ wallpaper_dir = /home/user/wallpapers
 rotation_interval = 1800
 randomize = true
 backend = hyprpaper
+hyprpaper_mode = contain
 monitor_name = DP-1
 pywal_enabled = true
 pywal_command = wal --cols16 -n -q

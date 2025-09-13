@@ -63,15 +63,19 @@ func (wm *WallpaperManager) RunDaemon() {
 		log.Printf("Error setting initial wallpaper: %v", err)
 	}
 
-	ticker := time.NewTicker(wm.config.GetRotationDuration())
+	var ticker *time.Ticker
 	if wm.config.RotationInterval == 0 {
-		ticker.Stop()
 		log.Println("Auto-rotation is disabled.")
 	} else {
-		log.Printf("Auto-rotation enabled every %s.", wm.config.GetRotationDuration())
+		interval := wm.config.GetRotationDuration()
+		if interval <= 0 {
+			log.Println("Invalid non-positive rotation interval; disabling auto-rotation.")
+		} else {
+			log.Printf("Auto-rotation enabled every %s.", interval)
+			ticker = time.NewTicker(interval)
+			defer ticker.Stop()
+		}
 	}
-
-	defer ticker.Stop()
 
 	for {
 		select {
@@ -102,11 +106,17 @@ func (wm *WallpaperManager) RunDaemon() {
 			default:
 				msg.ResponseChan <- "Error: Unknown command"
 			}
-		case <-ticker.C:
-			wm.setNextWallpaper()
 		case <-wm.stopAutoRotate:
 			log.Println("Daemon stop signal received.")
 			return
+		default:
+			if ticker != nil {
+				select {
+				case <-ticker.C:
+					wm.setNextWallpaper()
+				default:
+				}
+			}
 		}
 	}
 }

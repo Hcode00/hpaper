@@ -2,3 +2,4 @@ hpaper
 update_aur.sh
 scripts/dev-run-test.sh
 .git/
+dist/

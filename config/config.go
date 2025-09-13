@@ -17,6 +17,7 @@ type Config struct {
 	Backend          string
 	SwaybgMode       string
 	SwaybgOutput     string
+	HyprpaperMode    string
 	MonitorName      string
 	PywalEnabled     bool
 	PywalCommand     string
@@ -38,6 +39,7 @@ func DefaultConfig() *Config {
 		Backend:          "swaybg",
 		SwaybgMode:       "fill",
 		SwaybgOutput:     "",
+		HyprpaperMode:    "cover",
 		MonitorName:      "",
 		PywalEnabled:     false,
 		PywalCommand:     "wal --cols16 -n",
@@ -72,8 +74,9 @@ func saveConfig(cfg *Config, filePath string) error {
 	fmt.Fprintf(writer, "# Select an output to configure. Subsequent appearance options will only apply to this output. The special value * selects all outputs.\n")
 	fmt.Fprintf(writer, "swaybg_output = %s\n", cfg.SwaybgOutput)
 	fmt.Fprintf(writer, "\n# [hyprpaper settings]\n")
+	fmt.Fprintf(writer, "# available modes: cover, contain, tile\n")
+	fmt.Fprintf(writer, "hyprpaper_mode = %s\n", cfg.HyprpaperMode)
 	fmt.Fprintf(writer, "# Example: DP-1 or all\n")
-
 	fmt.Fprintf(writer, "monitor_name = %s\n", cfg.MonitorName)
 	fmt.Fprintf(writer, "\n# [pywal settings]\n")
 	fmt.Fprintf(writer, "pywal_enabled = %t\n", cfg.PywalEnabled)
@@ -160,6 +163,8 @@ func LoadConfig(filePath string, cliWallpaperDir string) (*Config, error) {
 			cfg.SwaybgMode = value
 		case "swaybg_output":
 			cfg.SwaybgOutput = value
+		case "hyprpaper_mode":
+			cfg.HyprpaperMode = value
 		default:
 			fmt.Printf("Warning: Unknown config key '%s' on line %d in file %s\n", key, lineNum, filePath)
 		}
