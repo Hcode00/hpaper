@@ -4,7 +4,7 @@ hpaper is a blazingly fast Go-based wallpaper management daemon for Wayland comp
 
 ## Video Showcase
 
-![hpaper Demo](https://drive.google.com/uc?id=1f53Vmxe1DmpySzCP_H0ls8HfKHcer-X_)
+![hpaper Demo](https://drive.google.com/uc?export=download&id=1f53Vmxe1DmpySzCP_H0ls8HfKHcer-X_)
 
 ## Key Features
 
