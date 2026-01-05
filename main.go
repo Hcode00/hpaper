@@ -88,15 +88,32 @@ func main() {
 		}
 
 		var backend backends.WallpaperBackend
-		switch strings.ToLower(strings.TrimSpace(cfg.Backend)) {
+		selectedBackend := strings.ToLower(strings.TrimSpace(cfg.Backend))
+		if selectedBackend == "" {
+			selectedBackend = "auto"
+		}
+
+		if selectedBackend == "auto" {
+			xdgDesktop := strings.ToUpper(os.Getenv("XDG_CURRENT_DESKTOP"))
+			if strings.Contains(xdgDesktop, "KDE") {
+				selectedBackend = "kde"
+			} else {
+				selectedBackend = "swaybg"
+			}
+		}
+
+		switch selectedBackend {
 		case "swaybg":
 			backend = backends.NewSwayBGBackend()
 			fmt.Println("Using backend: swaybg")
 		case "hyprpaper":
 			backend = backends.NewHyprpaperBackend(cfg.MonitorName)
 			fmt.Printf("Using backend: hyprpaper (Monitor: %s)\n", cfg.MonitorName)
+		case "kde":
+			backend = backends.NewKDEBackend()
+			fmt.Println("Using backend: kde (Plasma Shell via DBus)")
 		default:
-			log.Fatalf("Error: Unknown backend '%s' specified in config. Supported backends: swaybg, hyprpaper.", cfg.Backend)
+			log.Fatalf("Error: Unknown backend '%s' specified in config. Supported backends: auto, swaybg, hyprpaper, kde.", cfg.Backend)
 		}
 
 		daemon.StartDaemon(cfg.WallpaperDir, *cfg, backend)

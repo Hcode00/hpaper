@@ -36,7 +36,7 @@ func DefaultConfig() *Config {
 		WallpaperDir:     "",
 		RotationInterval: 3600,
 		Randomize:        true,
-		Backend:          "swaybg",
+		Backend:          "auto",
 		SwaybgMode:       "fill",
 		SwaybgOutput:     "",
 		HyprpaperMode:    "cover",
@@ -67,6 +67,8 @@ func saveConfig(cfg *Config, filePath string) error {
 	fmt.Fprintf(writer, "wallpaper_dir = %s\n", effectiveWallpaperDir)
 	fmt.Fprintf(writer, "rotation_interval = %d\n", cfg.RotationInterval)
 	fmt.Fprintf(writer, "randomize = %t\n", cfg.Randomize)
+	fmt.Fprintf(writer, "# available backends: auto, swaybg, hyprpaper, kde\n")
+	fmt.Fprintf(writer, "# auto selects kde when XDG_CURRENT_DESKTOP contains 'KDE', otherwise swaybg\n")
 	fmt.Fprintf(writer, "backend = %s\n", cfg.Backend)
 	fmt.Fprintf(writer, "\n# [swaybg settings]\n\n")
 	fmt.Fprintf(writer, "# available modes: fill, fit, stretch, center, tile\n")

@@ -4,11 +4,11 @@ hpaper is a blazingly fast Go-based wallpaper management daemon for Wayland comp
 
 ## Video Showcase
 
-[![hpaper Demo](https://github.com/Hcode00/hpaper/blob/main/showcase.gif)]()
+![hpaper Demo](https://drive.google.com/uc?id=1f53Vmxe1DmpySzCP_H0ls8HfKHcer-X_)
 
 ## Key Features
 
-- **Multi-Backend Support**: Works with both [Swaybg](https://github.com/swaywm/swaybg) and [Hyprpaper](https://github.com/hyprwm/hyprpaper) wallpaper engines.
+- **Multi-Backend Support**: Works with [Swaybg](https://github.com/swaywm/swaybg), [Hyprpaper](https://github.com/hyprwm/hyprpaper), and KDE Plasma 6 (via Plasma Shell DBus scripting).
 - **Smart Daemon Architecture**: Runs as a background daemon with instant client commands for seamless wallpaper switching.
 - **Configuration-Driven**: Comprehensive configuration file support with runtime overrides and automatic defaults.
 - **Pywal Integration**: Optional automatic color scheme generation using pywal for system-wide theming.
@@ -65,7 +65,7 @@ hpaper automatically creates a configuration file at `~/.config/hpaper/hpaper.co
 - **`wallpaper_dir`** - Directory containing wallpaper images
 - **`rotation_interval`** - Auto-rotation interval in seconds (0 disables)
 - **`randomize`** - Shuffle wallpaper order on startup
-- **`backend`** - Backend engine: `swaybg` or `hyprpaper`
+- **`backend`** - Backend engine: `auto`, `swaybg`, `hyprpaper`, `kde` (recommended: `auto`)
 
 **Swaybg Settings:**
 - **`swaybg_mode`** - Display mode: `fill`, `fit`, `stretch`, `center`, `tile`
@@ -78,6 +78,15 @@ hpaper automatically creates a configuration file at `~/.config/hpaper/hpaper.co
 **Pywal Integration:**
 - **`pywal_enabled`** - Enable automatic color scheme generation
 - **`pywal_command`** - Custom pywal command with arguments
+
+## KDE Plasma 6 (Wayland)
+
+If you run Plasma 6 on Wayland, using `swaybg` can conflict with KDE's desktop layer and cause black/white screens. Use the native `kde` backend instead.
+
+- Set `backend = kde` to force it, or `backend = auto` to auto-select KDE when `XDG_CURRENT_DESKTOP` contains `KDE`.
+- The KDE backend talks to Plasma Shell over DBus by calling `org.kde.PlasmaShell.evaluateScript` via `qdbus`.
+- `qdbus` binary candidates (first found is used): `qdbus`, `qdbus-qt6`, `qdbus6`.
+- Optional fallback: `plasma-apply-wallpaperimage` if DBus scripting fails.
 
 ## Examples
 
