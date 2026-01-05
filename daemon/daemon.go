@@ -20,17 +20,24 @@ type IPCMessage struct {
 }
 
 type WallpaperManager struct {
-	wallpapers           []string
-	currentIndex         int
-	mu                   sync.Mutex
-	stopAutoRotate       chan struct{}
-	commandChan          chan IPCMessage
-	config               config.Config
-	wallpaperBackend     backends.WallpaperBackend
+	wallpapers        []string
+	currentIndex      int
+	mu                sync.Mutex
+	stopAutoRotate    chan struct{}
+	commandChan       chan IPCMessage
+	config            config.Config
+	configPath        string
+	startWallpaperDir string
+
+	wallpaperBackend backends.WallpaperBackend
+	backendName      string
+
 	currentWallpaperPath string
+	ticker               *time.Ticker
+	tickerCh             <-chan time.Time
 }
 
-func StartDaemon(wallpaperDir string, config config.Config, backend backends.WallpaperBackend) {
+func StartDaemon(configPath string, wallpaperDir string, config config.Config, backendName string, backend backends.WallpaperBackend) {
 	wallpapers, err := utils.LoadWallpapers(wallpaperDir, config.Randomize)
 	if err != nil {
 		log.Fatalf("Failed to load wallpapers: %v", err)
@@ -41,12 +48,16 @@ func StartDaemon(wallpaperDir string, config config.Config, backend backends.Wal
 	}
 
 	manager := &WallpaperManager{
-		wallpapers:       wallpapers,
-		currentIndex:     0,
-		stopAutoRotate:   make(chan struct{}),
-		commandChan:      make(chan IPCMessage),
-		wallpaperBackend: backend,
-		config:           config,
+		wallpapers:           wallpapers,
+		currentIndex:         0,
+		stopAutoRotate:       make(chan struct{}),
+		commandChan:          make(chan IPCMessage),
+		wallpaperBackend:     backend,
+		backendName:          backendName,
+		config:               config,
+		configPath:           configPath,
+		startWallpaperDir:    wallpaperDir,
+		currentWallpaperPath: "",
 	}
 
 	if err := manager.listenForCommands(); err != nil {
@@ -63,24 +74,8 @@ func (wm *WallpaperManager) RunDaemon() {
 		log.Printf("Error setting initial wallpaper: %v", err)
 	}
 
-	var ticker *time.Ticker
-	if wm.config.RotationInterval == 0 {
-		log.Println("Auto-rotation is disabled.")
-	} else {
-		interval := wm.config.GetRotationDuration()
-		if interval <= 0 {
-			log.Println("Invalid non-positive rotation interval; disabling auto-rotation.")
-		} else {
-			log.Printf("Auto-rotation enabled every %s.", interval)
-			ticker = time.NewTicker(interval)
-			defer ticker.Stop()
-		}
-	}
-
-	var tickerCh <-chan time.Time
-	if ticker != nil {
-		tickerCh = ticker.C
-	}
+	wm.resetTicker()
+	defer wm.stopTicker()
 
 	for {
 		select {
@@ -103,7 +98,7 @@ func (wm *WallpaperManager) RunDaemon() {
 				wm.mu.Unlock()
 				msg.ResponseChan <- path
 			case backends.ActionReload:
-				if err := wm.reloadWallpapers(); err != nil {
+				if err := wm.handleReload(); err != nil {
 					msg.ResponseChan <- fmt.Sprintf("Error: %v", err)
 				} else {
 					msg.ResponseChan <- "OK"
@@ -114,7 +109,7 @@ func (wm *WallpaperManager) RunDaemon() {
 		case <-wm.stopAutoRotate:
 			log.Println("Daemon stop signal received.")
 			return
-		case <-tickerCh:
+		case <-wm.tickerCh:
 			wm.setNextWallpaper()
 		}
 	}
@@ -146,6 +141,34 @@ func (wm *WallpaperManager) listenForCommands() error {
 	return nil
 }
 
+func (wm *WallpaperManager) resetTicker() {
+	wm.stopTicker()
+	if wm.config.RotationInterval == 0 {
+		log.Println("Auto-rotation is disabled.")
+		wm.tickerCh = nil
+		return
+	}
+
+	interval := wm.config.GetRotationDuration()
+	if interval <= 0 {
+		log.Println("Invalid non-positive rotation interval; disabling auto-rotation.")
+		wm.tickerCh = nil
+		return
+	}
+
+	log.Printf("Auto-rotation enabled every %s.", interval)
+	wm.ticker = time.NewTicker(interval)
+	wm.tickerCh = wm.ticker.C
+}
+
+func (wm *WallpaperManager) stopTicker() {
+	if wm.ticker != nil {
+		wm.ticker.Stop()
+		wm.ticker = nil
+	}
+	wm.tickerCh = nil
+}
+
 func (wm *WallpaperManager) handleClientConnection(conn net.Conn) {
 	defer conn.Close()
 	buffer := make([]byte, 1024)
@@ -167,8 +190,89 @@ func (wm *WallpaperManager) handleClientConnection(conn net.Conn) {
 }
 
 func (wm *WallpaperManager) SetWallpaper(imagePath string) error {
+	if err := wm.wallpaperBackend.SetWallpaper(imagePath, wm.config); err != nil {
+		return err
+	}
 	wm.currentWallpaperPath = imagePath
-	return wm.wallpaperBackend.SetWallpaper(imagePath, wm.config)
+	return nil
+}
+
+func (wm *WallpaperManager) handleReload() error {
+	newCfg, err := config.LoadConfig(wm.configPath, "")
+	if err != nil {
+		return fmt.Errorf("failed to reload config: %w", err)
+	}
+
+	// Resolve effective wallpaper directory: config overrides start argument.
+	effectiveDir := strings.TrimSpace(newCfg.WallpaperDir)
+	if effectiveDir == "" {
+		effectiveDir = wm.startWallpaperDir
+	}
+	if effectiveDir == "" {
+		return fmt.Errorf("wallpaper directory is empty after reload")
+	}
+
+	selection, err := backends.ResolveBackend(newCfg.Backend, *newCfg)
+	if err != nil {
+		return fmt.Errorf("failed to resolve backend: %w", err)
+	}
+
+	newWallpapers, err := utils.LoadWallpapers(effectiveDir, newCfg.Randomize)
+	if err != nil {
+		return fmt.Errorf("failed to reload wallpapers: %w", err)
+	}
+	if len(newWallpapers) == 0 {
+		return fmt.Errorf("no wallpapers found in %s after reload", effectiveDir)
+	}
+
+	wm.mu.Lock()
+	oldBackend := wm.wallpaperBackend
+	oldBackendName := wm.backendName
+	oldCurrent := wm.currentWallpaperPath
+	wm.config = *newCfg
+	wm.startWallpaperDir = effectiveDir
+	wm.wallpapers = newWallpapers
+
+	// Choose wallpaper to apply: keep current if still present.
+	chosen := ""
+	chosenIndex := 0
+	if oldCurrent != "" {
+		for i, p := range newWallpapers {
+			if p == oldCurrent {
+				chosen = p
+				chosenIndex = i
+				break
+			}
+		}
+	}
+	if chosen == "" {
+		chosen = newWallpapers[0]
+		chosenIndex = 0
+	}
+	wm.currentIndex = chosenIndex
+	wm.mu.Unlock()
+
+	// If backend changed, stop the old one right before applying with the new one.
+	if selection.Name != oldBackendName {
+		if stoppable, ok := oldBackend.(backends.StoppableBackend); ok {
+			if stopErr := stoppable.Stop(); stopErr != nil {
+				log.Printf("Warning: failed stopping old backend %s: %v", oldBackendName, stopErr)
+			}
+		}
+		wm.mu.Lock()
+		wm.wallpaperBackend = selection.Backend
+		wm.backendName = selection.Name
+		wm.mu.Unlock()
+		log.Printf("Reload switched backend: %s -> %s", oldBackendName, selection.Name)
+	}
+
+	log.Printf("Reload applying wallpaper: %s", chosen)
+	if err := wm.SetWallpaper(chosen); err != nil {
+		return fmt.Errorf("failed to set wallpaper after reload: %w", err)
+	}
+
+	wm.resetTicker()
+	return nil
 }
 
 func (wm *WallpaperManager) setNextWallpaper() {

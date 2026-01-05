@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
 
 	"hpaper/backends"
 	"hpaper/config"
@@ -87,36 +86,13 @@ func main() {
 			log.Fatalf("Error: Wallpaper directory is not set. Please specify it via command line (e.g., '%s start /path/to/wallpapers/') or in your config file '%s'.", os.Args[0], cfgPath)
 		}
 
-		var backend backends.WallpaperBackend
-		selectedBackend := strings.ToLower(strings.TrimSpace(cfg.Backend))
-		if selectedBackend == "" {
-			selectedBackend = "auto"
+		selection, err := backends.ResolveBackend(cfg.Backend, *cfg)
+		if err != nil {
+			log.Fatalf("Error: %v", err)
 		}
 
-		if selectedBackend == "auto" {
-			xdgDesktop := strings.ToUpper(os.Getenv("XDG_CURRENT_DESKTOP"))
-			if strings.Contains(xdgDesktop, "KDE") {
-				selectedBackend = "kde"
-			} else {
-				selectedBackend = "swaybg"
-			}
-		}
-
-		switch selectedBackend {
-		case "swaybg":
-			backend = backends.NewSwayBGBackend()
-			fmt.Println("Using backend: swaybg")
-		case "hyprpaper":
-			backend = backends.NewHyprpaperBackend(cfg.MonitorName)
-			fmt.Printf("Using backend: hyprpaper (Monitor: %s)\n", cfg.MonitorName)
-		case "kde":
-			backend = backends.NewKDEBackend()
-			fmt.Println("Using backend: kde (Plasma Shell via DBus)")
-		default:
-			log.Fatalf("Error: Unknown backend '%s' specified in config. Supported backends: auto, swaybg, hyprpaper, kde.", cfg.Backend)
-		}
-
-		daemon.StartDaemon(cfg.WallpaperDir, *cfg, backend)
+		fmt.Printf("Using backend: %s\n", selection.Name)
+		daemon.StartDaemon(cfgPath, cfg.WallpaperDir, *cfg, selection.Name, selection.Backend)
 
 	case string(backends.ActionNext):
 		daemon.RunClientMode(backends.ActionNext)

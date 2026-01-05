@@ -18,47 +18,48 @@ func NewSwayBGBackend() *SwayBGBackend {
 	return &SwayBGBackend{}
 }
 
-func (s *SwayBGBackend) SetWallpaper(imagePath string, conf config.Config) error {
-	fmt.Printf("Setting wallpaper to: %s\n", imagePath)
-
+func (s *SwayBGBackend) Stop() error {
 	cmdFindPIDs := exec.Command("pgrep", "swaybg")
 	pidOutput, err := cmdFindPIDs.CombinedOutput()
-	if err == nil {
-		pidsStr := strings.Fields(strings.TrimSpace(string(pidOutput)))
-		if len(pidsStr) > 0 {
-			fmt.Printf("Found %d existing swaybg processes. Killing them...\n", len(pidsStr))
-			for _, pidStr := range pidsStr {
-				pid, parseErr := strconv.Atoi(pidStr)
-				if parseErr != nil {
-					log.Printf("Warning: Could not parse swaybg PID '%s': %v", pidStr, parseErr)
-					continue
-				}
-
-				process, procErr := os.FindProcess(pid)
-				if procErr != nil {
-					log.Printf("Warning: Could not find process with PID %d: %v", pid, procErr)
-					continue
-				}
-				err := process.Signal(syscall.SIGTERM)
-				if err != nil {
-					log.Printf("Warning: Failed to send SIGTERM to swaybg (PID %d): %v. Trying SIGKILL...", pid, err)
-					err = process.Signal(syscall.SIGKILL)
-					if err != nil {
-						log.Printf("Error: Failed to send SIGKILL to swaybg (PID %d): %v. This process might be orphaned.", pid, err)
-					} else {
-						fmt.Printf("Successfully SIGKILLed swaybg (PID %d).\n", pid)
-					}
-				} else {
-					fmt.Printf("Successfully SIGTERMd swaybg (PID %d).\n", pid)
-				}
-			}
-			time.Sleep(100 * time.Millisecond)
-		} else {
-			fmt.Println("No existing swaybg process found.")
-		}
-	} else {
-		fmt.Println("No existing swaybg process found (pgrep outputted no PIDs or failed):", err)
+	if err != nil {
+		return nil
 	}
+
+	pidsStr := strings.Fields(strings.TrimSpace(string(pidOutput)))
+	if len(pidsStr) == 0 {
+		return nil
+	}
+
+	for _, pidStr := range pidsStr {
+		pid, parseErr := strconv.Atoi(pidStr)
+		if parseErr != nil {
+			log.Printf("Warning: Could not parse swaybg PID '%s': %v", pidStr, parseErr)
+			continue
+		}
+
+		process, procErr := os.FindProcess(pid)
+		if procErr != nil {
+			log.Printf("Warning: Could not find process with PID %d: %v", pid, procErr)
+			continue
+		}
+
+		err := process.Signal(syscall.SIGTERM)
+		if err != nil {
+			log.Printf("Warning: Failed to send SIGTERM to swaybg (PID %d): %v. Trying SIGKILL...", pid, err)
+			err = process.Signal(syscall.SIGKILL)
+			if err != nil {
+				log.Printf("Error: Failed to send SIGKILL to swaybg (PID %d): %v. This process might be orphaned.", pid, err)
+			}
+		}
+	}
+
+	time.Sleep(100 * time.Millisecond)
+	return nil
+}
+
+func (s *SwayBGBackend) SetWallpaper(imagePath string, conf config.Config) error {
+	fmt.Printf("Setting wallpaper to: %s\n", imagePath)
+	_ = s.Stop()
 
 	var cmdNewSwaybg *exec.Cmd
 	if conf.SwaybgMode == "" && conf.SwaybgOutput == "" {
@@ -75,7 +76,7 @@ func (s *SwayBGBackend) SetWallpaper(imagePath string, conf config.Config) error
 	cmdNewSwaybg.Stdout = nil
 	cmdNewSwaybg.Stderr = nil
 
-	err = cmdNewSwaybg.Start()
+	err := cmdNewSwaybg.Start()
 	if err != nil {
 		return fmt.Errorf("error launching new swaybg process: %v", err)
 	}
