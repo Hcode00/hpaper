@@ -3,3 +3,5 @@ update_aur.sh
 scripts/dev-run-test.sh
 .git/
 dist/
+.gitattributes
+.gitignore
