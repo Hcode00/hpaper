@@ -5,3 +5,5 @@ scripts/dev-run-test.sh
 dist/
 .gitattributes
 .gitignore
+
+todo_v0.8.md
