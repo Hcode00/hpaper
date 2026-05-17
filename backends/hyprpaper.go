@@ -65,7 +65,7 @@ func (h *HyprpaperBackend) SetWallpaper(imagePath string, conf config.Config) er
 	if h.monitorName == "all" {
 		names, err := listHyprpaperMonitors(hyprctlPath)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to enumerate monitors for 'all': %w", err)
 		}
 		monitorNames = names
 	} else if h.monitorName == "" {
@@ -128,7 +128,7 @@ func listHyprpaperMonitors(hyprctlPath string) ([]string, error) {
 	}
 
 	if len(names) == 0 {
-		return nil, fmt.Errorf("hyprctl monitors returned no monitor names")
+		return nil, fmt.Errorf("hyprctl monitors returned no monitor names; ensure Hyprland is running and monitors are connected")
 	}
 
 	return names, nil
