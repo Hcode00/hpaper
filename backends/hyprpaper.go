@@ -132,7 +132,7 @@ func listHyprpaperMonitors(hyprctlPath string) ([]string, error) {
 	}
 
 	if len(names) == 0 {
-		return nil, fmt.Errorf("no monitors found from hyprctl; verify Hyprland is running and at least one monitor is connected")
+		return nil, fmt.Errorf("no monitors found from hyprctl: verify Hyprland is running and at least one monitor is connected")
 	}
 
 	return names, nil
@@ -154,7 +154,7 @@ func applyHyprpaperWallpaper(hyprctlPath, wallpaperArg string) error {
 		if err == nil {
 			return nil
 		}
-		lastErr = fmt.Errorf("attempt %d failed to set wallpaper %q: %v (output: %s)", attempt, wallpaperArg, err, strings.TrimSpace(string(output)))
+		lastErr = fmt.Errorf("attempt %d failed to set wallpaper %q: %w (output: %s)", attempt, wallpaperArg, err, strings.TrimSpace(string(output)))
 		time.Sleep(hyprpaperRetryDelay)
 	}
 	return fmt.Errorf("failed to set hyprpaper wallpaper after %d attempts: %w", hyprpaperRetryCount, lastErr)
