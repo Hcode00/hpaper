@@ -1,6 +1,7 @@
 package backends
 
 import (
+	"encoding/json"
 	"fmt"
 	"hpaper/config"
 	"log"
@@ -20,6 +21,10 @@ func NewHyprpaperBackend(monitor string) *HyprpaperBackend {
 	}
 }
 
+type hyprctlMonitor struct {
+	Name string `json:"name"`
+}
+
 func (h *HyprpaperBackend) SetWallpaper(imagePath string, conf config.Config) error {
 	cmd := exec.Command("pidof", "hyprpaper")
 	output, err := cmd.CombinedOutput()
@@ -37,13 +42,6 @@ func (h *HyprpaperBackend) SetWallpaper(imagePath string, conf config.Config) er
 	}
 	fmt.Printf("Setting wallpaper with Hyprpaper to: %s\n", imagePath)
 
-	monitorPart := ""
-	if h.monitorName != "" && h.monitorName != "all" {
-		monitorPart = h.monitorName + ","
-	} else {
-		monitorPart = ","
-	}
-
 	mode := strings.TrimSpace(conf.HyprpaperMode)
 	if mode == "" {
 		mode = "cover"
@@ -54,38 +52,25 @@ func (h *HyprpaperBackend) SetWallpaper(imagePath string, conf config.Config) er
 		hyprctlPath = "hyprctl"
 	}
 
-	// Preload image with retry (hyprpaper may need a moment after spawn).
-	var preloadErr error
-	for attempt := 1; attempt <= 10; attempt++ {
-		preloadCmd := exec.Command(hyprctlPath, "hyprpaper", "preload", imagePath)
-		if preloadOut, err2 := preloadCmd.CombinedOutput(); err2 != nil {
-			preloadErr = fmt.Errorf("attempt %d preload failed: %v (output: %s)", attempt, err2, strings.TrimSpace(string(preloadOut)))
-			time.Sleep(100 * time.Millisecond)
-			continue
-		} else {
-			preloadErr = nil
-			break
+	// Hyprpaper IPC:
+	// hyprctl hyprpaper wallpaper "MONITOR,PATH[,FIT]"
+	// FIT is optional and defaults to cover.
+	monitorNames := []string{h.monitorName}
+	if h.monitorName == "all" {
+		names, err := listHyprpaperMonitors(hyprctlPath)
+		if err != nil {
+			return err
 		}
-	}
-	if preloadErr != nil {
-		return preloadErr
+		monitorNames = names
 	}
 
-	// Hyprpaper IPC:
-	// cover (default) => hyprctl hyprpaper wallpaper "MONITOR,image"
-	// tile/contain => hyprctl hyprpaper wallpaper "MONITOR,mode:image"
-	// 'all' monitor or empty uses leading comma
-	wallpaperArg := ""
-	if mode == "cover" {
-		wallpaperArg = fmt.Sprintf("%s%s", monitorPart, imagePath)
-	} else {
-		wallpaperArg = fmt.Sprintf("%s%s:%s", monitorPart, mode, imagePath)
+	for _, monitorName := range monitorNames {
+		wallpaperArg := buildHyprpaperWallpaperArg(monitorName, imagePath, mode)
+		if err := applyHyprpaperWallpaper(hyprctlPath, monitorName, wallpaperArg); err != nil {
+			return err
+		}
 	}
-	cmd = exec.Command(hyprctlPath, "hyprpaper", "wallpaper", wallpaperArg)
-	output, err = cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("error setting wallpaper with hyprctl hyprpaper: %v\nOutput: %s", err, output)
-	}
+
 	fmt.Println("Hyprpaper wallpaper set successfully.")
 
 	if conf.PywalEnabled {
@@ -111,4 +96,52 @@ func (h *HyprpaperBackend) SetWallpaper(imagePath string, conf config.Config) er
 	}
 
 	return nil
+}
+
+func listHyprpaperMonitors(hyprctlPath string) ([]string, error) {
+	cmd := exec.Command(hyprctlPath, "monitors", "-j")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list hyprctl monitors: %v (output: %s)", err, strings.TrimSpace(string(output)))
+	}
+
+	var monitors []hyprctlMonitor
+	if err := json.Unmarshal(output, &monitors); err != nil {
+		return nil, fmt.Errorf("failed to parse hyprctl monitors output: %v", err)
+	}
+
+	names := make([]string, 0, len(monitors))
+	for _, monitor := range monitors {
+		if monitor.Name != "" {
+			names = append(names, monitor.Name)
+		}
+	}
+
+	if len(names) == 0 {
+		return nil, fmt.Errorf("hyprctl monitors returned no monitor names")
+	}
+
+	return names, nil
+}
+
+func buildHyprpaperWallpaperArg(monitorName, imagePath, mode string) string {
+	args := []string{monitorName, imagePath}
+	if mode != "" && mode != "cover" {
+		args = append(args, mode)
+	}
+	return strings.Join(args, ",")
+}
+
+func applyHyprpaperWallpaper(hyprctlPath, monitorName, wallpaperArg string) error {
+	var lastErr error
+	for attempt := 1; attempt <= 10; attempt++ {
+		cmd := exec.Command(hyprctlPath, "hyprpaper", "wallpaper", wallpaperArg)
+		output, err := cmd.CombinedOutput()
+		if err == nil {
+			return nil
+		}
+		lastErr = fmt.Errorf("attempt %d failed to set wallpaper for monitor %q: %v (output: %s)", attempt, monitorName, err, strings.TrimSpace(string(output)))
+		time.Sleep(100 * time.Millisecond)
+	}
+	return lastErr
 }
