@@ -55,7 +55,7 @@ func (h *HyprpaperBackend) SetWallpaper(imagePath string, conf config.Config) er
 	// Hyprpaper IPC:
 	// hyprctl hyprpaper wallpaper "MONITOR,PATH[,FIT]"
 	// FIT is optional and defaults to cover.
-	monitorNames := []string{h.monitorName}
+	var monitorNames []string
 	if h.monitorName == "all" {
 		names, err := listHyprpaperMonitors(hyprctlPath)
 		if err != nil {
@@ -64,6 +64,8 @@ func (h *HyprpaperBackend) SetWallpaper(imagePath string, conf config.Config) er
 		monitorNames = names
 	} else if h.monitorName == "" {
 		monitorNames = []string{""}
+	} else {
+		monitorNames = []string{h.monitorName}
 	}
 
 	for _, monitorName := range monitorNames {
@@ -128,7 +130,7 @@ func listHyprpaperMonitors(hyprctlPath string) ([]string, error) {
 
 func buildHyprpaperWallpaperArg(monitorName, imagePath, mode string) string {
 	args := []string{monitorName, imagePath}
-	if mode != "" && mode != "cover" {
+	if mode != "cover" {
 		args = append(args, mode)
 	}
 	return strings.Join(args, ",")
