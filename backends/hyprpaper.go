@@ -62,6 +62,8 @@ func (h *HyprpaperBackend) SetWallpaper(imagePath string, conf config.Config) er
 			return err
 		}
 		monitorNames = names
+	} else if h.monitorName == "" {
+		monitorNames = []string{""}
 	}
 
 	for _, monitorName := range monitorNames {
