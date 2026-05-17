@@ -62,9 +62,9 @@ func (h *HyprpaperBackend) SetWallpaper(imagePath string, conf config.Config) er
 	}
 
 	// Hyprpaper IPC:
-	// hyprctl hyprpaper wallpaper "MONITOR,PATH[,FIT]"
-	// FIT is optional and defaults to cover.
-	// Empty MONITOR lets hyprpaper apply the default/all outputs.
+	// hyprctl hyprpaper wallpaper "MONITOR,PATH[,FIT_MODE]"
+	// FIT_MODE is optional and defaults to cover.
+	// Empty MONITOR lets hyprpaper apply the fallback output.
 	var monitorNames []string
 	if h.monitorName == "all" {
 		names, err := listHyprpaperMonitors(hyprctlPath)

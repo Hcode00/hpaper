@@ -76,7 +76,7 @@ func saveConfig(cfg *Config, filePath string) error {
 	fmt.Fprintf(writer, "# Select an output to configure. Subsequent appearance options will only apply to this output. The special value * selects all outputs.\n")
 	fmt.Fprintf(writer, "swaybg_output = %s\n", cfg.SwaybgOutput)
 	fmt.Fprintf(writer, "\n# [hyprpaper settings]\n")
-	fmt.Fprintf(writer, "# available modes: cover, contain, tile\n")
+	fmt.Fprintf(writer, "# available modes: cover, contain, tile, fill\n")
 	fmt.Fprintf(writer, "hyprpaper_mode = %s\n", cfg.HyprpaperMode)
 	fmt.Fprintf(writer, "# Example: DP-1 or all\n")
 	fmt.Fprintf(writer, "monitor_name = %s\n", cfg.MonitorName)

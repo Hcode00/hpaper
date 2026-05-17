@@ -72,7 +72,7 @@ hpaper automatically creates a configuration file at `~/.config/hpaper/hpaper.co
 - **`swaybg_output`** - Target output (monitor) or `*` for all
 
 **Hyprpaper Settings:**
-- **`hyprpaper_mode`** - Display mode: `cover`, `contain`, `tile`
+- **`hyprpaper_mode`** - Display mode: `cover`, `contain`, `tile`, `fill`
 - **`monitor_name`** - Monitor identifier (e.g., `DP-1`) or `all`
 
 **Pywal Integration:**
