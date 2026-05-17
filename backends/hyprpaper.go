@@ -52,6 +52,10 @@ func (h *HyprpaperBackend) SetWallpaper(imagePath string, conf config.Config) er
 		mode = "cover"
 	}
 
+	if strings.Contains(imagePath, ",") {
+		return fmt.Errorf("hyprpaper IPC does not support commas in image paths: %s", imagePath)
+	}
+
 	hyprctlPath := os.Getenv("HPAPER_HYPRCTL")
 	if strings.TrimSpace(hyprctlPath) == "" {
 		hyprctlPath = "hyprctl"
@@ -153,5 +157,5 @@ func applyHyprpaperWallpaper(hyprctlPath, wallpaperArg string) error {
 		lastErr = fmt.Errorf("attempt %d failed to set wallpaper %q: %v (output: %s)", attempt, wallpaperArg, err, strings.TrimSpace(string(output)))
 		time.Sleep(hyprpaperRetryDelay)
 	}
-	return lastErr
+	return fmt.Errorf("failed to set hyprpaper wallpaper after %d attempts; ensure hyprpaper is running and the image path is valid: %w", hyprpaperRetryCount, lastErr)
 }
