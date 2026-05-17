@@ -25,6 +25,11 @@ type hyprctlMonitor struct {
 	Name string `json:"name"`
 }
 
+const (
+	hyprpaperRetryCount = 10
+	hyprpaperRetryDelay = 100 * time.Millisecond
+)
+
 func (h *HyprpaperBackend) SetWallpaper(imagePath string, conf config.Config) error {
 	cmd := exec.Command("pidof", "hyprpaper")
 	output, err := cmd.CombinedOutput()
@@ -55,6 +60,7 @@ func (h *HyprpaperBackend) SetWallpaper(imagePath string, conf config.Config) er
 	// Hyprpaper IPC:
 	// hyprctl hyprpaper wallpaper "MONITOR,PATH[,FIT]"
 	// FIT is optional and defaults to cover.
+	// Empty MONITOR lets hyprpaper apply the default/all outputs.
 	var monitorNames []string
 	if h.monitorName == "all" {
 		names, err := listHyprpaperMonitors(hyprctlPath)
@@ -70,7 +76,7 @@ func (h *HyprpaperBackend) SetWallpaper(imagePath string, conf config.Config) er
 
 	for _, monitorName := range monitorNames {
 		wallpaperArg := buildHyprpaperWallpaperArg(monitorName, imagePath, mode)
-		if err := applyHyprpaperWallpaper(hyprctlPath, monitorName, wallpaperArg); err != nil {
+		if err := applyHyprpaperWallpaper(hyprctlPath, wallpaperArg); err != nil {
 			return err
 		}
 	}
@@ -136,16 +142,16 @@ func buildHyprpaperWallpaperArg(monitorName, imagePath, mode string) string {
 	return strings.Join(args, ",")
 }
 
-func applyHyprpaperWallpaper(hyprctlPath, monitorName, wallpaperArg string) error {
+func applyHyprpaperWallpaper(hyprctlPath, wallpaperArg string) error {
 	var lastErr error
-	for attempt := 1; attempt <= 10; attempt++ {
+	for attempt := 1; attempt <= hyprpaperRetryCount; attempt++ {
 		cmd := exec.Command(hyprctlPath, "hyprpaper", "wallpaper", wallpaperArg)
 		output, err := cmd.CombinedOutput()
 		if err == nil {
 			return nil
 		}
-		lastErr = fmt.Errorf("attempt %d failed to set wallpaper for monitor %q: %v (output: %s)", attempt, monitorName, err, strings.TrimSpace(string(output)))
-		time.Sleep(100 * time.Millisecond)
+		lastErr = fmt.Errorf("attempt %d failed to set wallpaper %q: %v (output: %s)", attempt, wallpaperArg, err, strings.TrimSpace(string(output)))
+		time.Sleep(hyprpaperRetryDelay)
 	}
 	return lastErr
 }
